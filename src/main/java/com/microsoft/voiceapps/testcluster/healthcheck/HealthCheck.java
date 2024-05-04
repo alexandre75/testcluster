@@ -92,7 +92,7 @@ public class HealthCheck {
 				} catch (HealthCheckException e) {
 					setHealth(false);
 				}
-				Thread.sleep(10);
+				Thread.sleep(100);
 			}
 		} catch(InterruptedException e) {
 			// ignore
