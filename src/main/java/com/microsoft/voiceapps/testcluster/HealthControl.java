@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -99,7 +98,7 @@ public class HealthControl {
 						.map(directory::partition)
 						.flatMap(col -> col.stream())
 	    		        .map(healthCheck -> healthCheck.health())
-	    		        .filter(health -> health.getErrorRate() >= errorRate.orElse(0F))
+	    		        .filter(health -> health.getErrorRate() >= errorRate.orElse(0F) && health.getErrorRate() != 1F) // no point in showing 100% fail
 	    		        .collect(Collectors.toList());
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
