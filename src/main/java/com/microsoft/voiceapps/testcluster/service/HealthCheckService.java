@@ -13,6 +13,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -58,6 +61,8 @@ public class HealthCheckService {
 	
 	SSLContext sslContext;
 	
+	private final List<HttpClient> clients = new ArrayList<>();
+	private AtomicInteger current = new AtomicInteger();
 	
 	
 	@Autowired
@@ -65,6 +70,15 @@ public class HealthCheckService {
 		try {
 			sslContext = SSLContext.getInstance("TLS");
 			sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
+			
+			for (int i = 0 ; i < 1000 ; i++) {
+			 HttpClient httpClient = HttpClient.newBuilder()
+					        .connectTimeout(Duration.ofSeconds(15))
+					        .sslContext(sslContext) // SSL context 'sc' initialised as earlier
+					     //   .sslParameters(parameters) // ssl parameters if overriden
+					        .build();
+			clients.add(httpClient);
+			}
 		} catch (KeyManagementException | NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
@@ -73,15 +87,10 @@ public class HealthCheckService {
 	public void testHealth(URI uri) throws HealthCheckException {
 		requireNonNull(uri);
 		
-		HttpClient client = HttpClient.newBuilder()
-		        .connectTimeout(Duration.ofSeconds(15))
-		        .sslContext(sslContext) // SSL context 'sc' initialised as earlier
-		     //   .sslParameters(parameters) // ssl parameters if overriden
-		        .build();
-		
 		HttpResponse<String> response;
 		try {
-			response = client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
+			response = clients.get(current.accumulateAndGet(1, this::rotate))
+					          .send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
 			if (response.statusCode() != 200) {
 				throw new HealthCheckException("uri" + uri.toString(), "" + response.statusCode());
 			}
@@ -90,5 +99,9 @@ public class HealthCheckService {
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private int rotate(int a, int b) {
+		return (a + b) % clients.size();
 	}
 }
