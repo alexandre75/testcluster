@@ -32,7 +32,7 @@ class HealthCheckTest {
 	
 	@AfterEach
 	void tearDown() {
-		subject.stop();
+		subject.close();
 	}
 
 	@Test

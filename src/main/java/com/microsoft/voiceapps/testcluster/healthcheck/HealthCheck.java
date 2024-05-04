@@ -2,9 +2,15 @@ package com.microsoft.voiceapps.testcluster.healthcheck;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.Closeable;
+import java.lang.ref.Cleaner;
 import java.net.URI;
 import java.time.Duration;
 import java.util.BitSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
@@ -13,11 +19,14 @@ import lombok.AllArgsConstructor;
 import lombok.Value;
 
 @AllArgsConstructor
-public class HealthCheck {
+public class HealthCheck implements Closeable {
+	private static final int CHECK_DELAY = 100;
+
+	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(10);
+	
 	private static final int HISTORY_SIZE = 1000;
 	private URI clusterHealthCheck;
 	private HealthCheckService healthCheckService;
-	private volatile boolean started = false;
 	private volatile int size = 0;
 	
 	private BitSet history = new BitSet();
@@ -25,10 +34,28 @@ public class HealthCheck {
 	
 	private long lap;
 	
+	private ScheduledFuture<?> handle;
+	
+	private static final Cleaner cleaner = Cleaner.create();
+
+    class State implements Runnable {
+         public void run() {
+        	 if (handle != null) {
+        		 handle.cancel(false);
+        	 }
+         }
+    }
+    
+    private final State state;
+    private final Cleaner.Cleanable cleanable;
+	
 	public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService) {
 		super();
 		this.clusterHealthCheck = requireNonNull(clusterHealthCheck);
 		this.healthCheckService = requireNonNull(healthCheckService);
+		
+        this.state = new State();
+        this.cleanable = cleaner.register(this, state);
 	}
 	
 	synchronized void setHealth(boolean success) {
@@ -42,11 +69,8 @@ public class HealthCheck {
 		}
 	}
 
-	public void start() {
-		started = true;
-		
-		Thread thread = new Thread(this::runChecks);
-		thread.start();
+	public void start() {	
+		handle = executor.scheduleWithFixedDelay(this::runCheck, 0, CHECK_DELAY, TimeUnit.MILLISECONDS);
 	}
 	
 	public synchronized Health health() {
@@ -93,31 +117,25 @@ public class HealthCheck {
 		}
 	}
 
-	public void stop() {
-		started = false;
-	}
-	
-	private void runChecks() {
+	private void runCheck() {
+		long start = System.nanoTime();
 		try {
-			while (started) {
-				long start = System.nanoTime();
-				try {
-					healthCheckService.testHealth(clusterHealthCheck);
-					setHealth(true);
-				} catch (HealthCheckException e) {
-					setHealth(false);
-				}
-				Thread.sleep(100);
-				
-				long duration = System.nanoTime() - start;
-				if (lap == 0) {
-					lap = duration;
-				} else {
-					lap = 2 * duration / size + (lap * (size - 1))/ size;
-				}
-			}
-		} catch(InterruptedException e) {
-			// ignore
+			healthCheckService.testHealth(clusterHealthCheck);
+			setHealth(true);
+		} catch (HealthCheckException e) {
+			setHealth(false);
 		}
+
+		long duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
+		if (lap == 0) {
+			lap = duration;
+		} else {
+			lap = 2 * duration / size + (lap * (size - 1))/ size;
+		}
+	}
+
+	@Override
+	public void close() {
+		cleanable.clean();
 	}
 }
