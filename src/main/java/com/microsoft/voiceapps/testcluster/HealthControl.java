@@ -91,13 +91,15 @@ public class HealthControl {
 	}
 	
 	@GetMapping("/healths/{namespace}")
-	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, @RequestParam Optional<String> partitionFilter, OptionalDouble errorRate) {
-		logger.info("GET /health/"+namespace + "?" + partitionFilter);
+	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, 
+			@RequestParam("partition-filter") Optional<String> partitionFilter, 
+			@RequestParam("error-rate") Optional<Float> errorRate) {
+		logger.info("GET /health/"+namespace + "?" + partitionFilter + "&errorRate=" + errorRate);
 		var res = directory.partitions().stream().filter(partition -> partitionFilter.map(s -> partition.getPartition().contains(s)).orElse(true))
 						.map(directory::partition)
 						.flatMap(col -> col.stream())
 	    		        .map(healthCheck -> healthCheck.health())
-	    		        .filter(health -> health.getErrorRate() >= errorRate.orElse(0D))
+	    		        .filter(health -> health.getErrorRate() >= errorRate.orElse(0F))
 	    		        .collect(Collectors.toList());
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalDouble;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,7 +82,7 @@ class HealthControlTest {
 		Partition partition = new Partition("namespace", "partition");
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
-	    var response = subject.healthNamespace("namespace", Optional.empty(), OptionalDouble.empty());
+	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
 	    assertEquals(1, response.getBody().size());
@@ -94,7 +93,7 @@ class HealthControlTest {
 		Partition partition = new Partition("namespace", "partition");
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
-	    var response = subject.healthNamespace("namespace", Optional.of("rti"), OptionalDouble.empty());
+	    var response = subject.healthNamespace("namespace", Optional.of("rti"), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
 	    assertEquals(1, response.getBody().size());
@@ -105,7 +104,7 @@ class HealthControlTest {
 		Partition partition = new Partition("namespace", "partition");
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
-	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), OptionalDouble.empty());
+	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
@@ -115,7 +114,7 @@ class HealthControlTest {
 		Partition partition = new Partition("namespace", "partition");
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
-	    var response = subject.healthNamespace("namespace", Optional.empty(), OptionalDouble.of(0.1D));
+	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.1F));
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
@@ -125,7 +124,7 @@ class HealthControlTest {
 		Partition partition = new Partition("namespace", "partition");
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
-	    var response = subject.healthNamespace("namespace", Optional.empty(), OptionalDouble.of(0.0D));
+	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.0F));
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
 	    assertEquals(1, response.getBody().size());
