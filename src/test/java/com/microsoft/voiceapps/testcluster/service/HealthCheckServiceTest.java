@@ -20,7 +20,6 @@ class HealthCheckServiceTest {
 	}
 	
 	@Test
-	@Disabled
 	void testTimeout() {
 		URI uri = URI.create("https://envoy.nam-a.ic3-sbvmessaging-vms.eastus-prod.cosmic.office.net:3432/api/voicemail/probe");
 		
