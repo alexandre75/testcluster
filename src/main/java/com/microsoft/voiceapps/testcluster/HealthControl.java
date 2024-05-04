@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,7 +75,7 @@ public class HealthControl {
 		}
 	}
 	
-	@GetMapping("/health/{namespace}/{partition}")
+	@GetMapping("/healths/{namespace}/{partition}")
 	ResponseEntity<List<Health>> health(@PathVariable String namespace, @PathVariable String partition) {
 		logger.info("GET /health/"+namespace+"/" + partition);
 	    var res =  directory.partition(new Partition(namespace, partition))
@@ -87,7 +89,22 @@ public class HealthControl {
 	    }
 	}
 	
-	@DeleteMapping("/health/{namespace}/{partition}")
+	@GetMapping("/healths/{namespace}")
+	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, @RequestParam Optional<String> partitionfilter) {
+		logger.info("GET /health/"+namespace + "?" + partitionfilter);
+		var res = directory.partitions().stream().filter(partition -> partitionfilter.map(s -> partition.getPartition().contains(s)).orElse(true))
+						.map(directory::partition)
+						.flatMap(col -> col.stream())
+	    		        .map(healthCheck -> healthCheck.health())
+	    		        .collect(Collectors.toList());
+	    if (res.isEmpty()) {
+	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
+	    } else {
+	    	return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
+	    }
+	}
+	
+	@DeleteMapping("/healths/{namespace}/{partition}")
 	ResponseEntity<Collection<HealthCheck>> delete(@PathVariable String namespace, @PathVariable String partition) {
 		logger.info("DELETE /health/"+namespace+"/" + partition);
 	    var res =  directory.remove(new Partition(namespace, partition));

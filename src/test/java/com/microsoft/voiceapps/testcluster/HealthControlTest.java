@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,5 +75,37 @@ class HealthControlTest {
 		
 		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
 		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
+	}
+	
+	@Test
+	void shouldReturnNamespaceHealth() {
+		Partition partition = new Partition("namespace", "partition");
+	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.healthNamespace("namespace", Optional.empty());
+	    
+	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+	    assertEquals(1, response.getBody().size());
+	}
+	
+	@Test
+	void shouldReturnNamespaceHealthFilterWork() {
+		Partition partition = new Partition("namespace", "partition");
+	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.healthNamespace("namespace", Optional.of("rti"));
+	    
+	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+	    assertEquals(1, response.getBody().size());
+	}
+	
+	@Test
+	void shouldReturnNamespaceHealthFilterExclude() {
+		Partition partition = new Partition("namespace", "partition");
+	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.healthNamespace("namespace", Optional.of("unknown"));
+	    
+	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
 }
