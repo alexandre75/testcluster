@@ -2,15 +2,24 @@ package com.microsoft.voiceapps.testcluster;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +27,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.voiceapps.testcluster.healthcheck.Directory;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck.Health;
@@ -25,18 +37,40 @@ import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
+import jakarta.annotation.PostConstruct;
+
 @RestController
 public class HealthControl {
 	private final HealthCheckService healthCheckService;
 	private final Directory directory;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HealthControl.class);
+	private static Set<String> registered = new HashSet<>();
+	private static Object lock = new Object();
+	private static boolean initialized;
 	
 	@Autowired
 	public HealthControl(HealthCheckService healthCheckService, Directory directory) {
 		super();
 		this.healthCheckService = healthCheckService;
 		this.directory = directory;
+	}
+	
+	@PostConstruct
+	public void init() {
+		synchronized(lock) {
+			if (!initialized) {
+				ObjectMapper mapper = new ObjectMapper();
+				Request req;
+				try {
+					req = mapper.readValue(new File("config.json"), Request.class);
+					register(req);
+				} catch (IOException e) {
+					logger.error("Init failed", e);
+				}
+				initialized = true;
+			}
+		}
 	}
 	
 	@GetMapping("/health/{namespace}/{partition}")
@@ -46,6 +80,17 @@ public class HealthControl {
 	    		        .stream()
 	    		        .map(healthCheck -> healthCheck.health())
 	    		        .collect(Collectors.toList());
+	    if (res.isEmpty()) {
+	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
+	    } else {
+	    	return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
+	    }
+	}
+	
+	@DeleteMapping("/health/{namespace}/{partition}")
+	ResponseEntity<Collection<HealthCheck>> delete(@PathVariable String namespace, @PathVariable String partition) {
+		logger.info("DELETE /health/"+namespace+"/" + partition);
+	    var res =  directory.remove(new Partition(namespace, partition));
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 	    } else {
@@ -67,10 +112,30 @@ public class HealthControl {
 	    	HealthCheck healthcCheck = new HealthCheck(uri, healthCheckService);
 	    	healthcCheck.start();
 	    	directory.add(location, healthcCheck);
+	    	
+	    	registered.addAll(request.getUris());
+	    	
+	    	save();
 	    }  
+	    
 	    return ResponseEntity.status(HttpStatus.CREATED).body(null); 
 	}
 	
+	private void save() {
+		Request req = new Request();
+		req.setUris(new ArrayList<>(registered));
+		
+		ObjectMapper mapper = new ObjectMapper();
+		synchronized(lock)
+		{
+			try {
+				mapper.writeValue(new File("config.json"), req);
+			} catch (IOException e) {
+				logger.error("Can't save", e);
+			}
+		}
+	}
+
 	@ExceptionHandler({ IllegalArgumentException.class })
 	public ResponseEntity<?> handleDataIntegrityViolationException(IllegalArgumentException e) {
 		logger.warn("Parsing exception:" + e.toString());
