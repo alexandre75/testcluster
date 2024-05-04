@@ -3,8 +3,8 @@ package com.microsoft.voiceapps.testcluster.healthcheck;
 import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.BitSet;
-import java.util.concurrent.TimeUnit;
 
 import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
@@ -18,10 +18,12 @@ public class HealthCheck {
 	private URI clusterHealthCheck;
 	private HealthCheckService healthCheckService;
 	private volatile boolean started = false;
-	private int size = 0;
+	private volatile int size = 0;
 	
 	private BitSet history = new BitSet();
 	private int current;
+	
+	private long lap;
 	
 	public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService) {
 		super();
@@ -48,7 +50,7 @@ public class HealthCheck {
 	}
 	
 	public synchronized Health health() {
-		return new Health(clusterHealthCheck.getHost(), size, history.cardinality());
+		return new Health(clusterHealthCheck.getHost(), size, history.cardinality(), Duration.ofNanos(size * lap));
 	}
 
 	@Value
@@ -56,12 +58,14 @@ public class HealthCheck {
 		private String cluster;
 		private int nbRequests;
 		private int nbFailedRequests;
+		private Duration window;
 		
-		public Health(String cluster, int nbRequests, int nbFailedRequests) {
+		public Health(String cluster, int nbRequests, int nbFailedRequests, Duration window) {
 			super();
 			this.cluster = cluster;
 			this.nbRequests = nbRequests;
 			this.nbFailedRequests = nbFailedRequests;
+			this.window = window;
 		}
 
 		public String getCluster() {
@@ -75,8 +79,10 @@ public class HealthCheck {
 		public int getNbFailedRequests() {
 			return nbFailedRequests;
 		}
-		
-		
+
+		public Duration getWindow() {
+			return window;
+		}
 	}
 
 	public void stop() {
@@ -86,6 +92,7 @@ public class HealthCheck {
 	private void runChecks() {
 		try {
 			while (started) {
+				long start = System.nanoTime();
 				try {
 					healthCheckService.testHealth(clusterHealthCheck);
 					setHealth(true);
@@ -93,6 +100,13 @@ public class HealthCheck {
 					setHealth(false);
 				}
 				Thread.sleep(100);
+				
+				long duration = System.nanoTime() - start;
+				if (lap == 0) {
+					lap = duration;
+				} else {
+					lap = 2 * duration / size + (lap * (size - 1))/ size;
+				}
 			}
 		} catch(InterruptedException e) {
 			// ignore
