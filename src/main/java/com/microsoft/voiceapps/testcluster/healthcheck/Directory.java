@@ -21,4 +21,14 @@ public class Directory {
 	public Collection<HealthCheck> partition(Partition partition) {
 		return Collections.unmodifiableCollection(locations.getOrDefault(partition, Map.of()).values());
 	}
+
+	public Collection<HealthCheck> remove(Partition partition) {
+		Map<String, HealthCheck> deleted = locations.remove(partition);
+		
+		if (deleted == null) {
+			return Collections.emptyList();
+		} else {
+			return deleted.values();
+		}
+	}
 }
