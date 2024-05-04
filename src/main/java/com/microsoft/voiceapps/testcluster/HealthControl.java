@@ -1,15 +1,16 @@
 package com.microsoft.voiceapps.testcluster;
 
-import java.net.URI;
-import java.time.LocalDateTime;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -27,8 +28,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.core.exc.StreamReadException;
-import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.voiceapps.testcluster.healthcheck.Directory;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck;
@@ -45,8 +44,8 @@ public class HealthControl {
 	private final Directory directory;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HealthControl.class);
-	private static Set<String> registered = new HashSet<>();
-	private static Object lock = new Object();
+	private static final Set<String> registered = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	private static final Object lock = new Object();
 	private static boolean initialized;
 	
 	@Autowired
@@ -96,6 +95,12 @@ public class HealthControl {
 	    } else {
 	    	return ResponseEntity.status(HttpStatus.OK).body(res); 
 	    }
+	}
+	
+	@GetMapping("/health")
+	public ResponseEntity<Collection<Partition>> partitions() {
+		return ResponseEntity.status(HttpStatus.OK).body(directory.partitions());
+		
 	}
 	
 	@PostMapping("/register")

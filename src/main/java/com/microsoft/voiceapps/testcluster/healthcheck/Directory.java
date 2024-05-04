@@ -31,4 +31,8 @@ public class Directory {
 			return deleted.values();
 		}
 	}
+
+	public Collection<Partition> partitions() {
+		return Collections.unmodifiableCollection(locations.keySet());
+	}
 }
