@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -90,12 +91,13 @@ public class HealthControl {
 	}
 	
 	@GetMapping("/healths/{namespace}")
-	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, @RequestParam Optional<String> partitionfilter) {
-		logger.info("GET /health/"+namespace + "?" + partitionfilter);
-		var res = directory.partitions().stream().filter(partition -> partitionfilter.map(s -> partition.getPartition().contains(s)).orElse(true))
+	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, @RequestParam Optional<String> partitionFilter, OptionalDouble errorRate) {
+		logger.info("GET /health/"+namespace + "?" + partitionFilter);
+		var res = directory.partitions().stream().filter(partition -> partitionFilter.map(s -> partition.getPartition().contains(s)).orElse(true))
 						.map(directory::partition)
 						.flatMap(col -> col.stream())
 	    		        .map(healthCheck -> healthCheck.health())
+	    		        .filter(health -> health.getErrorRate() >= errorRate.orElse(0D))
 	    		        .collect(Collectors.toList());
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 

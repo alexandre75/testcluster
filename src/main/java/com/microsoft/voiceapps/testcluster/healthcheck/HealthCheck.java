@@ -83,6 +83,14 @@ public class HealthCheck {
 		public Duration getWindow() {
 			return window;
 		}
+
+		public double getErrorRate() {
+			if (getNbRequests() == 0) {
+				return 0D;
+			}
+			
+			return getNbFailedRequests() / (double)getNbRequests();
+		}
 	}
 
 	public void stop() {
