@@ -35,4 +35,8 @@ public class Directory {
 	public Collection<Partition> partitions() {
 		return Collections.unmodifiableCollection(locations.keySet());
 	}
+
+	public void clear() {
+		locations.clear();
+	}
 }

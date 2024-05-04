@@ -40,6 +40,7 @@ import jakarta.annotation.PostConstruct;
 
 @RestController
 public class HealthControl {
+	private static final String CONFIG_FILE_NAME = "config.json";
 	private final HealthCheckService healthCheckService;
 	private final Directory directory;
 	
@@ -62,7 +63,7 @@ public class HealthControl {
 				ObjectMapper mapper = new ObjectMapper();
 				Request req;
 				try {
-					req = mapper.readValue(new File("config.json"), Request.class);
+					req = mapper.readValue(new File(CONFIG_FILE_NAME), Request.class);
 					register(req);
 				} catch (IOException e) {
 					logger.error("Init failed", e);
@@ -97,14 +98,14 @@ public class HealthControl {
 	    }
 	}
 	
-	@GetMapping("/health")
+	@GetMapping("/partitions")
 	public ResponseEntity<Collection<Partition>> partitions() {
 		return ResponseEntity.status(HttpStatus.OK).body(directory.partitions());
 		
 	}
 	
-	@PostMapping("/register")
-	ResponseEntity register(@RequestBody Request request) {
+	@PostMapping("/partitions/from-uris")
+	ResponseEntity<?> register(@RequestBody Request request) {
 		if (request.getUris() == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); 
 		}
@@ -134,7 +135,7 @@ public class HealthControl {
 		synchronized(lock)
 		{
 			try {
-				mapper.writeValue(new File("config.json"), req);
+				mapper.writeValue(new File(CONFIG_FILE_NAME), req);
 			} catch (IOException e) {
 				logger.error("Can't save", e);
 			}
@@ -150,6 +151,15 @@ public class HealthControl {
 
 class Request {
 	List<String> uris;
+
+	public Request() {
+		
+	}
+	
+	Request(List<String> uris) {
+		super();
+		this.uris = uris;
+	}
 
 	public List<String> getUris() {
 		return uris;
