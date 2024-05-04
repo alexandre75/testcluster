@@ -77,4 +77,30 @@ class HealthCheckTest {
 		assertEquals(1000, subject.health().getNbRequests());
 		assertEquals(500, subject.health().getNbFailedRequests());
 	}
+	
+	@Test
+	void shouldRingWorks() throws HealthCheckException, InterruptedException {
+
+		for (int i = 0 ; i < 1000 ; i++) {
+			subject.setHealth(false);
+		}
+		for (int i = 0 ; i < 1000 ; i++) {
+			subject.setHealth(true);
+		}
+
+		assertEquals(0, subject.health().getNbFailedRequests());
+	}
+	
+	@Test
+	void shouldRingWorks2() throws HealthCheckException, InterruptedException {
+
+		for (int i = 0 ; i < 1000 ; i++) {
+			subject.setHealth(true);
+		}
+		for (int i = 0 ; i < 1000 ; i++) {
+			subject.setHealth(false);
+		}
+
+		assertEquals(1000, subject.health().getNbFailedRequests());
+	}
 }
