@@ -112,7 +112,7 @@ public class HealthControl {
 		return health.getErrorRate() >= errorRate.orElse(0F) && health.getErrorRate() != 1F;
 	}
 	
-	@DeleteMapping("/partitions/{namespace}/{partition}/{datacenter}")
+	@DeleteMapping("/cluster/{namespace}/{partition}/{datacenter}")
 	ResponseEntity<?> delete(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
 		logger.info("DELETE /health/"+namespace+"/" + partition);
 	    Optional<HealthCheck> res =  directory.remove(new Location(new Partition(namespace, partition), datacenter));
@@ -123,13 +123,7 @@ public class HealthControl {
 	    }
 	}
 	
-//	@GetMapping("/partitions")
-//	public ResponseEntity<Collection<Partition>> partitions() {
-//		return ResponseEntity.status(HttpStatus.OK).body(directory.partitions());
-//		
-//	}
-	
-	@PostMapping("/partitions/from-uris")
+	@PostMapping("/cluster/from-uris")
 	ResponseEntity<?> register(@RequestBody Request request) {
 		if (request.getUris() == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); 
