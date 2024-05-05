@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,8 +19,8 @@ import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
-class HealthControlTest {
-	HealthControl subject;
+class HealthResourceTest {
+	HealthResource subject;
 	
 	@Mock
 	HealthCheckService healthCheckService;
@@ -31,29 +30,7 @@ class HealthControlTest {
 	void init() {
 		MockitoAnnotations.openMocks(this);
 		
-		subject = new HealthControl(healthCheckService, directory);
-	}
-	
-	@Test
-	void shouldRegister() {
-		Request request = new Request(List.of("https://envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net/api/voicemail/probe"));
-		
-		subject.register(request);
-	
-		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
-		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
-	}
-	
-	@Test
-	void shouldPersistConfig() {
-		Request request = new Request(List.of("https://envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net/api/voicemail/probe"));
-		subject.register(request);
-	
-		directory.clear();
-		subject.init();
-		
-		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
-		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
+		subject = new HealthResource(directory);
 	}
 	
 	@Test
@@ -138,25 +115,6 @@ class HealthControlTest {
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
 	    var response = subject.health("namespace", "partition", "region2");
-	    
-	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
-	}
-	
-	@Test
-	void shouldDeleteHealthCheck() {
-		Partition partition = new Partition("namespace", "partition");
-	    Location location = new Location(partition, "region");
-		directory.add(location, new HealthCheck(URI.create("http://alex"), healthCheckService));
-	    
-	    var response = subject.delete("namespace", "partition", "region");
-	    
-	    assertTrue(directory.findOne(location).isEmpty());
-	    assertEquals(HttpStatusCode.valueOf(204), response.getStatusCode());
-	}
-	
-	@Test
-	void deleteShouldReturn404() {	    
-	    var response = subject.delete("namespace", "partition", "region1");
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
