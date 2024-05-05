@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -109,10 +108,8 @@ public class HealthControl {
 		logger.info("GET /health/"+namespace + "?" + partitionFilter + "&errorRate=" + errorRate);
 		Objects.requireNonNull(namespace);
 		
-		var res = directory.partitions().stream()
-				        .filter(partition -> partition.matches(namespace, partitionFilter))
-						.map(directory::partition)
-						.flatMap(col -> col.stream())
+		var res = directory.find(namespace, partitionFilter.orElse(""))
+				        .stream()
 	    		        .map(healthCheck -> healthCheck.health())
 	    		        .filter(health -> compareErrorRate(errorRate, health)) // no point in showing 100% fail
 	    		        .collect(Collectors.toList());
@@ -129,22 +126,22 @@ public class HealthControl {
 		return health.getErrorRate() >= errorRate.orElse(0F) && health.getErrorRate() != 1F;
 	}
 	
-	@DeleteMapping("/healths/{namespace}/{partition}")
-	ResponseEntity<Collection<HealthCheck>> delete(@PathVariable String namespace, @PathVariable String partition) {
+	@DeleteMapping("/partitions/{namespace}/{partition}/{datacenter}")
+	ResponseEntity<?> delete(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
 		logger.info("DELETE /health/"+namespace+"/" + partition);
-	    var res =  directory.remove(new Partition(namespace, partition));
+	    Optional<HealthCheck> res =  directory.remove(new Location(new Partition(namespace, partition), datacenter));
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 	    } else {
-	    	return ResponseEntity.status(HttpStatus.OK).body(res); 
+	    	return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null); 
 	    }
 	}
 	
-	@GetMapping("/partitions")
-	public ResponseEntity<Collection<Partition>> partitions() {
-		return ResponseEntity.status(HttpStatus.OK).body(directory.partitions());
-		
-	}
+//	@GetMapping("/partitions")
+//	public ResponseEntity<Collection<Partition>> partitions() {
+//		return ResponseEntity.status(HttpStatus.OK).body(directory.partitions());
+//		
+//	}
 	
 	@PostMapping("/partitions/from-uris")
 	ResponseEntity<?> register(@RequestBody Request request) {

@@ -2,6 +2,7 @@ package com.microsoft.voiceapps.testcluster;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.util.List;
@@ -31,17 +32,6 @@ class HealthControlTest {
 		MockitoAnnotations.openMocks(this);
 		
 		subject = new HealthControl(healthCheckService, directory);
-	}
-
-	@Test
-	void shouldReturnAll() {
-		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
-	    
-	    var response = subject.partitions();
-	    
-	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
-	    assertEquals(1, response.getBody().size());
 	}
 	
 	@Test
@@ -158,6 +148,25 @@ class HealthControlTest {
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
 	    var response = subject.health("namespace", "partition", "region2");
+	    
+	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
+	}
+	
+	@Test
+	void shouldDeleteHealthCheck() {
+		Partition partition = new Partition("namespace", "partition");
+	    Location location = new Location(partition, "region");
+		directory.add(location, new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.delete("namespace", "partition", "region");
+	    
+	    assertTrue(directory.findOne(location).isEmpty());
+	    assertEquals(HttpStatusCode.valueOf(204), response.getStatusCode());
+	}
+	
+	@Test
+	void deleteShouldReturn404() {	    
+	    var response = subject.delete("namespace", "partition", "region1");
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}

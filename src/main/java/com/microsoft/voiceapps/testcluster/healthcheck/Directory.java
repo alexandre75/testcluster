@@ -1,7 +1,9 @@
 package com.microsoft.voiceapps.testcluster.healthcheck;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,18 +11,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.google.common.base.Strings;
+
 @Component
 @Scope("singleton")
 public class Directory {
-	private Map<Partition, Map<String, HealthCheck>> locations = new ConcurrentHashMap<>();
+	private Map<String, Map<Partition, Map<String, HealthCheck>>> locations = new ConcurrentHashMap<>();
 	
 	public void add(Location location, HealthCheck health) {
-		locations.computeIfAbsent(location.getPartition(), k -> new ConcurrentHashMap<>())
+		locations.computeIfAbsent(location.getPartition().getNamespace(), k -> new ConcurrentHashMap<>())
+		         .computeIfAbsent(location.getPartition(), k -> new ConcurrentHashMap<>())
 		         .put(location.getDatacenter(), health);
 	}
 	
 	public Optional<HealthCheck> findOne(Location location) {
-		Map<String, HealthCheck> inPart = locations.get(location.getPartition());
+		var partitions = locations.get(location.getPartition().getNamespace());
+		
+		if (partitions == null) {
+			return Optional.empty();
+		}
+		
+		Map<String, HealthCheck> inPart = partitions.get(location.getPartition());
 		
 		if (inPart == null) {
 			return Optional.empty();
@@ -30,24 +41,49 @@ public class Directory {
 	}
 	
 	public Collection<HealthCheck> partition(Partition partition) {
-		return Collections.unmodifiableCollection(locations.getOrDefault(partition, Map.of()).values());
+		return Collections.unmodifiableCollection(locations.getOrDefault(partition.getNamespace(), Map.of())
+				                                           .getOrDefault(partition, Map.of()).values());
 	}
-
-	public Collection<HealthCheck> remove(Partition partition) {
-		Map<String, HealthCheck> deleted = locations.remove(partition);
+	
+	/**
+	 * Return HealthChecks matching the parameters.
+	 * @param namespace
+	 * @param partitionPattern can be null
+	 * @return HealthChecks matching the parameters.
+	 */
+	public List<HealthCheck> find(String namespace, String partitionPattern) {
+		var partitions = locations.get(namespace);
 		
-		if (deleted == null) {
+		if (partitions == null) {
 			return Collections.emptyList();
-		} else {
-			return deleted.values();
 		}
-	}
-
-	public Collection<Partition> partitions() {
-		return Collections.unmodifiableCollection(locations.keySet());
+		
+		List<HealthCheck> result = new ArrayList<>();
+		for (Partition partition : partitions.keySet()) {
+			if (Strings.isNullOrEmpty(partitionPattern) || partition.getPartition().contains(partitionPattern)) {
+				result.addAll(partitions.get(partition).values());
+			}
+		}
+		return result;
 	}
 
 	public void clear() {
 		locations.clear();
+	}
+
+	public Optional<HealthCheck> remove(Location location) {
+		var partitions = locations.get(location.getPartition().getNamespace());
+		
+		if (partitions == null) {
+			return Optional.empty();
+		}
+		
+		Map<String, HealthCheck> inPart = partitions.get(location.getPartition());
+		
+		if (inPart == null) {
+			return Optional.empty();
+		}
+		
+		return Optional.ofNullable(inPart.remove(location.getDatacenter()));
 	}
 }
