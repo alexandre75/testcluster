@@ -3,6 +3,7 @@ package com.microsoft.voiceapps.testcluster.healthcheck;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class Partition {
 	private String namespace;
@@ -37,6 +38,14 @@ public class Partition {
 			return false;
 		Partition other = (Partition) obj;
 		return Objects.equals(namespace, other.namespace) && Objects.equals(partition, other.partition);
+	}
+	
+	public boolean matches(String namespace, Optional<String> partitionFilter) {
+		if (!namespace.equals(this.namespace)) {
+			return false;
+		}
+		
+		return partitionFilter.map(s -> getPartition().contains(s)).orElse(true);
 	}
 	
 	@Override

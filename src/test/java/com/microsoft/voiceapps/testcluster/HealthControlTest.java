@@ -59,7 +59,7 @@ class HealthControlTest {
 		Partition partition = new Partition("namespace", "partition");
 	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
 	    
-	    var response = subject.health("namespace", "partition");
+	    var response = subject.partitionHealth("namespace", "partition");
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
 	    assertEquals(1, response.getBody().size());
@@ -75,6 +75,16 @@ class HealthControlTest {
 		
 		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
 		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
+	}
+	
+	@Test
+	void shouldFilteNamespace() {
+		Partition partition = new Partition("namespace", "partition");
+	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.healthNamespace("unkown", Optional.empty(), Optional.empty());
+	    
+	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
 	
 	@Test

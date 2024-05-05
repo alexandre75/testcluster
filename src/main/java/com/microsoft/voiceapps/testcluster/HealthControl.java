@@ -77,7 +77,7 @@ public class HealthControl {
 	}
 	
 	@GetMapping("/healths/{namespace}/{partition}")
-	ResponseEntity<List<Health>> health(@PathVariable String namespace, @PathVariable String partition) {
+	ResponseEntity<List<Health>> partitionHealth(@PathVariable String namespace, @PathVariable String partition) {
 		logger.info("GET /health/"+namespace+"/" + partition);
 	    var res =  directory.partition(new Partition(namespace, partition))
 	    		        .stream()
@@ -98,18 +98,23 @@ public class HealthControl {
 		Objects.requireNonNull(namespace);
 		
 		var res = directory.partitions().stream()
-				        .filter(partition -> partition.getNamespace().equals(namespace))
-				        .filter(partition -> partitionFilter.map(s -> partition.getPartition().contains(s)).orElse(true))
+				        .filter(partition -> partition.matches(namespace, partitionFilter))
 						.map(directory::partition)
 						.flatMap(col -> col.stream())
 	    		        .map(healthCheck -> healthCheck.health())
-	    		        .filter(health -> health.getErrorRate() >= errorRate.orElse(0F) && health.getErrorRate() != 1F) // no point in showing 100% fail
+	    		        .filter(health -> compareErrorRate(errorRate, health)) // no point in showing 100% fail
 	    		        .collect(Collectors.toList());
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 	    } else {
 	    	return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
 	    }
+	}
+
+	private boolean compareErrorRate(Optional<Float> errorRate, Health health) {
+		if (errorRate.isEmpty()) return true;
+		
+		return health.getErrorRate() >= errorRate.orElse(0F) && health.getErrorRate() != 1F;
 	}
 	
 	@DeleteMapping("/healths/{namespace}/{partition}")
