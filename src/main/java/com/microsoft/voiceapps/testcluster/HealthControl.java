@@ -108,16 +108,16 @@ public class HealthControl {
 		logger.info("GET /health/"+namespace + "?" + partitionFilter + "&errorRate=" + errorRate);
 		Objects.requireNonNull(namespace);
 		
-		var res = directory.find(namespace, partitionFilter.orElse(""))
+		if (!directory.exists(namespace)) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
+		}
+		
+		var res = directory.find(namespace, partitionFilter.orElse(null))
 				        .stream()
 	    		        .map(healthCheck -> healthCheck.health())
 	    		        .filter(health -> compareErrorRate(errorRate, health)) // no point in showing 100% fail
 	    		        .collect(Collectors.toList());
-	    if (res.isEmpty()) {
-	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
-	    } else {
-	    	return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
-	    }
+	    return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
 	}
 
 	private boolean compareErrorRate(Optional<Float> errorRate, Health health) {

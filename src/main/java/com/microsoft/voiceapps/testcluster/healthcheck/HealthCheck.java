@@ -22,7 +22,7 @@ import lombok.Value;
 public class HealthCheck implements Closeable {
 	private static final int CHECK_DELAY = 100;
 
-	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(10);
+	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(25);
 	
 	private static final int HISTORY_SIZE = 1000;
 	private URI clusterHealthCheck;

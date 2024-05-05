@@ -107,7 +107,8 @@ class HealthControlTest {
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), Optional.empty());
 	    
-	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
+	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+	    assertTrue(response.getBody().isEmpty());
 	}
 	
 	@Test
@@ -117,7 +118,8 @@ class HealthControlTest {
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.1F));
 	    
-	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
+	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+	    assertEquals(0, response.getBody().size());
 	}
 	
 	@Test

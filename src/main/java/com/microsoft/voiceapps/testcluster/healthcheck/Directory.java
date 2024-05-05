@@ -86,4 +86,8 @@ public class Directory {
 		
 		return Optional.ofNullable(inPart.remove(location.getDatacenter()));
 	}
+
+	public boolean exists(String namespace) {
+		return locations.containsKey(namespace);
+	}
 }
