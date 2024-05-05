@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,7 +95,11 @@ public class HealthControl {
 			@RequestParam("partition-filter") Optional<String> partitionFilter, 
 			@RequestParam("error-rate") Optional<Float> errorRate) {
 		logger.info("GET /health/"+namespace + "?" + partitionFilter + "&errorRate=" + errorRate);
-		var res = directory.partitions().stream().filter(partition -> partitionFilter.map(s -> partition.getPartition().contains(s)).orElse(true))
+		Objects.requireNonNull(namespace);
+		
+		var res = directory.partitions().stream()
+				        .filter(partition -> partition.getNamespace().equals(namespace))
+				        .filter(partition -> partitionFilter.map(s -> partition.getPartition().contains(s)).orElse(true))
 						.map(directory::partition)
 						.flatMap(col -> col.stream())
 	    		        .map(healthCheck -> healthCheck.health())
