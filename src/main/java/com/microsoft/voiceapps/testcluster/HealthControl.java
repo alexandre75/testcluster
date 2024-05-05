@@ -103,7 +103,7 @@ public class HealthControl {
 	
 	@GetMapping("/healths/{namespace}")
 	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, 
-			@RequestParam("partition-filter") Optional<String> partitionFilter, 
+			@RequestParam("partition-contains") Optional<String> partitionFilter, 
 			@RequestParam("error-rate") Optional<Float> errorRate) {
 		logger.info("GET /health/"+namespace + "?" + partitionFilter + "&errorRate=" + errorRate);
 		Objects.requireNonNull(namespace);
