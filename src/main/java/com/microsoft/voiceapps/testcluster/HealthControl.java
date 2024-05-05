@@ -87,20 +87,6 @@ public class HealthControl {
 	    }
 	}
 	
-	@GetMapping("/healths/{namespace}/{partition}")
-	ResponseEntity<List<Health>> partitionHealth(@PathVariable String namespace, @PathVariable String partition) {
-		logger.info("GET /health/"+namespace+"/" + partition);
-	    var res =  directory.partition(new Partition(namespace, partition))
-	    		        .stream()
-	    		        .map(healthCheck -> healthCheck.health())
-	    		        .collect(Collectors.toList());
-	    if (res.isEmpty()) {
-	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
-	    } else {
-	    	return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
-	    }
-	}
-	
 	@GetMapping("/healths/{namespace}")
 	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, 
 			@RequestParam("partition-contains") Optional<String> partitionFilter, 
