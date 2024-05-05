@@ -3,14 +3,12 @@ package com.microsoft.voiceapps.testcluster.service;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.URI;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 class HealthCheckServiceTest {
 
-	private HealthCheckService subject = new HealthCheckService();
+	private HealthCheckService subject = new HealthCheckService(Duration.ofSeconds(1), 2);
 	
 	@Test
 	void testOK() throws HealthCheckException {
@@ -23,7 +21,7 @@ class HealthCheckServiceTest {
 	void testTimeout() {
 		URI uri = URI.create("https://envoy.nam-a.ic3-sbvmessaging-vms.eastus-prod.cosmic.office.net:3432/api/voicemail/probe");
 		
-		Assertions.assertThrows(HealthCheckException.class, () -> subject.testHealth(uri));
+		assertThrows(HealthCheckException.class, () -> subject.testHealth(uri));
 	}
 
 }

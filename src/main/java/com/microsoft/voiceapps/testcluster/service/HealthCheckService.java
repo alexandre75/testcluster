@@ -67,13 +67,17 @@ public class HealthCheckService {
 	
 	@Autowired
 	public HealthCheckService() {
+		this(Duration.ofSeconds(15), 1000);
+	}
+	
+	public HealthCheckService(Duration timeout, int nbConnectionPool) {
 		try {
 			sslContext = SSLContext.getInstance("TLS");
 			sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
 			
-			for (int i = 0 ; i < 1000 ; i++) {
+			for (int i = 0 ; i < nbConnectionPool ; i++) {
 			 HttpClient httpClient = HttpClient.newBuilder()
-					        .connectTimeout(Duration.ofSeconds(15))
+					        .connectTimeout(timeout)
 					        .sslContext(sslContext) // SSL context 'sc' initialised as earlier
 					     //   .sslParameters(parameters) // ssl parameters if overriden
 					        .build();
