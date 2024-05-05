@@ -76,6 +76,18 @@ public class HealthControl {
 		}
 	}
 	
+	@GetMapping("/healths/{namespace}/{partition}/{datacenter}")
+	ResponseEntity<Health> health(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
+		logger.info("GET /health/"+namespace+"/" + partition + "/" + datacenter);
+	    Optional<HealthCheck> res =  directory.findOne(new Location(new Partition(namespace, partition), datacenter));
+
+	    if (res.isEmpty()) {
+	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
+	    } else {
+	    	return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(3, TimeUnit.MINUTES)).body(res.get().health()); 
+	    }
+	}
+	
 	@GetMapping("/healths/{namespace}/{partition}")
 	ResponseEntity<List<Health>> partitionHealth(@PathVariable String namespace, @PathVariable String partition) {
 		logger.info("GET /health/"+namespace+"/" + partition);

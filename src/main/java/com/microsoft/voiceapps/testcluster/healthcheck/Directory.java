@@ -3,6 +3,7 @@ package com.microsoft.voiceapps.testcluster.healthcheck;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.context.annotation.Scope;
@@ -16,6 +17,16 @@ public class Directory {
 	public void add(Location location, HealthCheck health) {
 		locations.computeIfAbsent(location.getPartition(), k -> new ConcurrentHashMap<>())
 		         .put(location.getDatacenter(), health);
+	}
+	
+	public Optional<HealthCheck> findOne(Location location) {
+		Map<String, HealthCheck> inPart = locations.get(location.getPartition());
+		
+		if (inPart == null) {
+			return Optional.empty();
+		}
+		
+		return Optional.ofNullable(inPart.get(location.getDatacenter()));
 	}
 	
 	public Collection<HealthCheck> partition(Partition partition) {

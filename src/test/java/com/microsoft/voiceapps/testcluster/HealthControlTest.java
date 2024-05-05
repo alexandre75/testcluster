@@ -1,6 +1,7 @@
 package com.microsoft.voiceapps.testcluster;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.net.URI;
 import java.util.List;
@@ -138,5 +139,26 @@ class HealthControlTest {
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
 	    assertEquals(1, response.getBody().size());
+	}
+	
+	@Test
+	void shouldReaturnHealth() {
+		Partition partition = new Partition("namespace", "partition");
+	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.health("namespace", "partition", "region");
+	    
+	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
+	    assertNotNull(response.getBody());
+	}
+	
+	@Test
+	void shouldReturn404() {
+		Partition partition = new Partition("namespace", "partition");
+	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    
+	    var response = subject.health("namespace", "partition", "region2");
+	    
+	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
 }

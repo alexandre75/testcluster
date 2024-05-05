@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,5 +60,38 @@ class DirectoryTest {
 		
 		assertEquals(0, healthChecks.size());
 	}
-
+	
+	@Test
+	void shouldReturnEmpty() {
+		Partition apacA = new Partition("namespace", "apac-a");		
+		Location japan = new Location(apacA, "japan");
+		
+		Optional<HealthCheck> result = subject.findOne(japan);
+		
+		assertTrue(result.isEmpty());
+	}
+	
+	@Test
+	void shouldReturnEmptyWhenPartitionExist() {
+		Partition apacA = new Partition("namespace", "apac-a");		
+		Location japan = new Location(apacA, "japan");
+		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), new HealthCheckService());
+		subject.add(japan, hJapan);
+		
+		Optional<HealthCheck> result = subject.findOne(new Location(apacA, "malaysia"));
+		
+		assertTrue(result.isEmpty());
+	}
+	
+	@Test
+	void shouldReturnHealth() {
+		Partition apacA = new Partition("namespace", "apac-a");		
+		Location japan = new Location(apacA, "japan");
+		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), new HealthCheckService());
+		subject.add(japan, hJapan);
+		
+		Optional<HealthCheck> result = subject.findOne(japan);
+		
+		assertEquals(hJapan, result.get());
+	}
 }
