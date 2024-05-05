@@ -13,9 +13,12 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.base.Strings;
 
+/**
+ * Repository for all the healthchecks.
+ */
 @Component
 @Scope("singleton")
-public class Directory {
+public class HealthCheckRepository {
 	private Map<String, Map<Partition, Map<String, HealthCheck>>> locations = new ConcurrentHashMap<>();
 	
 	public void add(Location location, HealthCheck health) {

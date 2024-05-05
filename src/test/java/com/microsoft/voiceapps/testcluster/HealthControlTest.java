@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatusCode;
 
-import com.microsoft.voiceapps.testcluster.healthcheck.Directory;
+import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckRepository;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck;
 import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
@@ -25,7 +25,7 @@ class HealthControlTest {
 	
 	@Mock
 	HealthCheckService healthCheckService;
-	Directory directory = new Directory();
+	HealthCheckRepository directory = new HealthCheckRepository();
 	
 	@BeforeEach
 	void init() {

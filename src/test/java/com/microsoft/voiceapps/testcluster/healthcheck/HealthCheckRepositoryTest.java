@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
-class DirectoryTest {
+class HealthCheckRepositoryTest {
 	
-	Directory subject = new Directory();
+	HealthCheckRepository subject = new HealthCheckRepository();
 
 	@Test
 	void test() {

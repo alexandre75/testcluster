@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.voiceapps.testcluster.healthcheck.Directory;
+import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckRepository;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck.Health;
 import com.microsoft.voiceapps.testcluster.healthcheck.Location;
@@ -44,7 +44,7 @@ import jakarta.annotation.PostConstruct;
 public class HealthControl {
 	private static final String CONFIG_FILE_NAME = "config.json";
 	private final HealthCheckService healthCheckService;
-	private final Directory directory;
+	private final HealthCheckRepository directory;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HealthControl.class);
 	private static final Set<String> registered = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -52,7 +52,7 @@ public class HealthControl {
 	private static boolean initialized;
 	
 	@Autowired
-	public HealthControl(HealthCheckService healthCheckService, Directory directory) {
+	public HealthControl(HealthCheckService healthCheckService, HealthCheckRepository directory) {
 		super();
 		this.healthCheckService = healthCheckService;
 		this.directory = directory;
