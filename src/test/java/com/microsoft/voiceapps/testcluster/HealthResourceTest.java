@@ -20,6 +20,8 @@ import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
 class HealthResourceTest {
+	private static final URI CLUSTER_HEALTH_CHECK = URI.create("http://nds-webrole-svc.apac-b.ic3-sbvvoiceapps-nds.malaysiasouth-prod.cosmic.office.net/health");
+
 	HealthResource subject;
 	
 	@Mock
@@ -36,7 +38,7 @@ class HealthResourceTest {
 	@Test
 	void shouldFilteNamespace() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.healthNamespace("unkown", Optional.empty(), Optional.empty());
 	    
@@ -46,7 +48,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealth() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.empty());
 	    
@@ -57,7 +59,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealthFilterWork() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("rti"), Optional.empty());
 	    
@@ -68,7 +70,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealthFilterExclude() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), Optional.empty());
 	    
@@ -79,7 +81,7 @@ class HealthResourceTest {
 	@Test
 	void shouldFilterLowErrorRate() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.1F));
 	    
@@ -90,7 +92,7 @@ class HealthResourceTest {
 	@Test
 	void shouldShowHighErrorRate() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.0F));
 	    
@@ -101,7 +103,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReaturnHealth() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.health("namespace", "partition", "region");
 	    
@@ -112,7 +114,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturn404() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(URI.create("http://alex"), healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
 	    
 	    var response = subject.health("namespace", "partition", "region2");
 	    

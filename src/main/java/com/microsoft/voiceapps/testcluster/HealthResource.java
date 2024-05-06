@@ -69,12 +69,17 @@ public class HealthResource {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 		}
 		
-		var res = directory.find(namespace, partitionFilter.orElse(null))
+		List<Health> res = directory.find(namespace, partitionFilter.orElse(null))
 				        .stream()
 	    		        .map(healthCheck -> healthCheck.health())
 	    		        .filter(health -> compareErrorRate(errorRate, health)) // no point in showing 100% fail
 	    		        .collect(Collectors.toList());
-	    return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(CollectionModel.of(res)); 
+		for (Health health : res) {
+			health.add(linkTo(getClass()).slash(namespace).slash(health.location().getPartition().getPartition()).slash(health.location().getDatacenter()).withSelfRel());
+		}
+		Link linkSelf = linkTo(getClass()).slash(namespace).withSelfRel();
+	    CollectionModel<Health> halModel = CollectionModel.of(res, linkSelf);
+		return ResponseEntity.status(HttpStatus.OK).body(halModel); 
 	}
 
 	private boolean compareErrorRate(Optional<Float> errorRate, Health health) {

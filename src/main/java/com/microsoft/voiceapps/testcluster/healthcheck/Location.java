@@ -46,8 +46,12 @@ public class Location  {
 	}
 
 	public static Location from(URI uri) {
+		return fromHost(uri.getHost());
+	}
+	
+	public static Location fromHost(String hostname) {
 		try {
-			String[] parts = uri.getHost().split("\\.");
+			String[] parts = hostname.split("\\.");
 
 			String namespace = parts[2];
 			String partition = parts[1];
@@ -55,7 +59,7 @@ public class Location  {
 
 			return new Location(new Partition(namespace, partition), datacenter.split("-")[0]);
 		} catch(Exception e) {
-			throw new IllegalArgumentException(uri.toString());
+			throw new IllegalArgumentException(hostname, e);
 		}
 	}
 }
