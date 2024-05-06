@@ -6,22 +6,38 @@ import java.net.URI;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+@WireMockTest(httpsEnabled = true)
 class HealthCheckServiceTest {
 
 	private HealthCheckService subject = new HealthCheckService(Duration.ofSeconds(1), 2);
 	
 	@Test
-	void testOK() throws HealthCheckException {
-		URI uri = URI.create("https://envoy.nam-a.ic3-sbvmessaging-vms.eastus-prod.cosmic.office.net/api/voicemail/probe");
+	void testOK(WireMockRuntimeInfo wmRuntimeInfo) throws HealthCheckException {
+        stubFor(get("/api/voicemail/probe").willReturn(ok()));		
+		URI uri = URI.create("https://localhost:" + wmRuntimeInfo.getHttpsPort() + "/api/voicemail/probe");
 		
 		subject.testHealth(uri);
 	}
 	
 	@Test
-	void testTimeout() {
-		URI uri = URI.create("https://envoy.nam-a.ic3-sbvmessaging-vms.eastus-prod.cosmic.office.net:3432/api/voicemail/probe");
+	void testTimeout(WireMockRuntimeInfo wmRuntimeInfo) {
+		stubFor(get("/api/voicemail/probe").willReturn(ok().withFixedDelay(2000)));
+		URI uri = URI.create("https://localhost:" + wmRuntimeInfo.getHttpsPort() + "/api/voicemail/probe");
 		
 		assertThrows(HealthCheckException.class, () -> subject.testHealth(uri));
 	}
 
+	@Test
+	void testKO(WireMockRuntimeInfo wmRuntimeInfo) throws HealthCheckException {
+        stubFor(get("/api/voicemail/probe").willReturn(WireMock.forbidden()));		
+		URI uri = URI.create("https://localhost:" + wmRuntimeInfo.getHttpsPort() + "/api/voicemail/probe");
+		
+		assertThrows(HealthCheckException.class, () -> subject.testHealth(uri));
+	}
 }

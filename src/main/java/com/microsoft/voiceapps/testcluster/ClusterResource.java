@@ -70,7 +70,7 @@ public class ClusterResource {
 		}
 	}
 	
-	@DeleteMapping("/cluster/{namespace}/{partition}/{datacenter}")
+	@DeleteMapping("/{namespace}/{partition}/{datacenter}")
 	ResponseEntity<?> delete(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
 		logger.info("DELETE /health/"+namespace+"/" + partition);
 	    Optional<HealthCheck> res =  directory.remove(new Location(new Partition(namespace, partition), datacenter));
@@ -81,7 +81,7 @@ public class ClusterResource {
 	    }
 	}
 	
-	@PostMapping("/cluster/from-uris")
+	@PostMapping("/from-uris")
 	ResponseEntity<?> register(@RequestBody Request request) {
 		if (request.getUris() == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); 

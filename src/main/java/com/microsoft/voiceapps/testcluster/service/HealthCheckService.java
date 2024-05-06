@@ -62,6 +62,7 @@ public class HealthCheckService {
 	SSLContext sslContext;
 	
 	private final List<HttpClient> clients = new ArrayList<>();
+	private final Duration timeout;
 	private AtomicInteger current = new AtomicInteger();
 	
 	
@@ -71,6 +72,7 @@ public class HealthCheckService {
 	}
 	
 	public HealthCheckService(Duration timeout, int nbConnectionPool) {
+		this.timeout = requireNonNull(timeout);
 		try {
 			sslContext = SSLContext.getInstance("TLS");
 			sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
@@ -94,7 +96,7 @@ public class HealthCheckService {
 		HttpResponse<String> response;
 		try {
 			response = clients.get(current.accumulateAndGet(1, this::rotate))
-					          .send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString());
+					          .send(HttpRequest.newBuilder(uri).timeout(timeout).build(), HttpResponse.BodyHandlers.ofString());
 			if (response.statusCode() != 200) {
 				throw new HealthCheckException("uri" + uri.toString(), "" + response.statusCode());
 			}
