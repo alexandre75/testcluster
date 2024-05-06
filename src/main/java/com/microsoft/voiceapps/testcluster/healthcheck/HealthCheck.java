@@ -12,8 +12,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.hateoas.RepresentationModel;
-
 import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
@@ -80,7 +78,7 @@ public class HealthCheck implements Closeable {
 	}
 
 	@Value
-	public static class Health extends RepresentationModel<Health> {
+	public static class Health {
 		private String cluster;
 		private int nbRequests;
 		private int nbFailedRequests;

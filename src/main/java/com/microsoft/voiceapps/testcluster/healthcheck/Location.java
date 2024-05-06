@@ -53,7 +53,7 @@ public class Location  {
 			String partition = parts[1];
 			String datacenter = parts[3];
 
-			return new Location(new Partition(namespace, partition), datacenter);
+			return new Location(new Partition(namespace, partition), datacenter.split("-")[0]);
 		} catch(Exception e) {
 			throw new IllegalArgumentException(uri.toString());
 		}

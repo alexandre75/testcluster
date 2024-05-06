@@ -44,6 +44,7 @@ public class HealthResource {
 	@GetMapping("/{namespace}/{partition}/{datacenter}")
 	ResponseEntity<EntityModel<Health>> health(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
 		logger.info("GET /health/"+namespace+"/" + partition + "/" + datacenter);
+		datacenter = datacenter.split("-")[0];
 	    Optional<HealthCheck> res =  directory.findOne(new Location(new Partition(namespace, partition), datacenter));
 
 	    if (res.isEmpty()) {
