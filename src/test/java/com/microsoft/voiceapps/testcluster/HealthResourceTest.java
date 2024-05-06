@@ -51,7 +51,7 @@ class HealthResourceTest {
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
-	    assertEquals(1, response.getBody().size());
+	    assertEquals(1, response.getBody().getContent().size());
 	}
 	
 	@Test
@@ -62,7 +62,7 @@ class HealthResourceTest {
 	    var response = subject.healthNamespace("namespace", Optional.of("rti"), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
-	    assertEquals(1, response.getBody().size());
+	    assertEquals(1, response.getBody().getContent().size());
 	}
 	
 	@Test
@@ -73,7 +73,7 @@ class HealthResourceTest {
 	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
-	    assertTrue(response.getBody().isEmpty());
+	    assertTrue(response.getBody().getContent().isEmpty());
 	}
 	
 	@Test
@@ -84,7 +84,7 @@ class HealthResourceTest {
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.1F));
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
-	    assertEquals(0, response.getBody().size());
+	    assertEquals(0, response.getBody().getContent().size());
 	}
 	
 	@Test
@@ -95,7 +95,7 @@ class HealthResourceTest {
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.0F));
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
-	    assertEquals(1, response.getBody().size());
+	    assertEquals(1, response.getBody().getContent().size());
 	}
 	
 	@Test

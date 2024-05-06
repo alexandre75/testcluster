@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.http.CacheControl;
@@ -58,7 +59,7 @@ public class HealthResource {
 	}
 	
 	@GetMapping("/{namespace}")
-	ResponseEntity<List<Health>> healthNamespace(@PathVariable String namespace, 
+	ResponseEntity<CollectionModel<Health>> healthNamespace(@PathVariable String namespace, 
 			@RequestParam("partition-contains") Optional<String> partitionFilter, 
 			@RequestParam("error-rate") Optional<Float> errorRate) {
 		logger.info("GET /health/"+namespace + "?" + partitionFilter + "&errorRate=" + errorRate);
@@ -73,7 +74,7 @@ public class HealthResource {
 	    		        .map(healthCheck -> healthCheck.health())
 	    		        .filter(health -> compareErrorRate(errorRate, health)) // no point in showing 100% fail
 	    		        .collect(Collectors.toList());
-	    return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(res); 
+	    return ResponseEntity.status(HttpStatus.OK).cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES)).body(CollectionModel.of(res)); 
 	}
 
 	private boolean compareErrorRate(Optional<Float> errorRate, Health health) {
