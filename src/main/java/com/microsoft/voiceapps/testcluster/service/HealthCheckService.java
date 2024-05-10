@@ -23,9 +23,11 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 @Service
+@Scope("singleton")
 public class HealthCheckService {
 	
 	X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
@@ -68,10 +70,12 @@ public class HealthCheckService {
 	
 	@Autowired
 	public HealthCheckService() {
-		this(Duration.ofSeconds(15), 1000);
+		this(Duration.ofSeconds(15), 300);
 	}
 	
 	public HealthCheckService(Duration timeout, int nbConnectionPool) {
+		System.setProperty("jdk.httpclient.keepalive.timeout", "1200");
+		
 		this.timeout = requireNonNull(timeout);
 		try {
 			sslContext = SSLContext.getInstance("TLS");
