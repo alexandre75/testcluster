@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.Closeable;
 import java.lang.ref.Cleaner;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.BitSet;
@@ -17,6 +18,7 @@ import org.springframework.hateoas.RepresentationModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
+import com.microsoft.voiceapps.testcluster.service.TcpConnectService;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -26,14 +28,18 @@ public class HealthCheck implements Closeable {
 	private static final int CHECK_DELAY = 100;
 
 	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(25);
-	
 	private static final int HISTORY_SIZE = 1000;
 	private URI clusterHealthCheck;
+	private final InetSocketAddress inetAddr;
 	private HealthCheckService healthCheckService;
-	private volatile int size = 0;
 	
+	private volatile int size = 0;
 	private BitSet history = new BitSet();
 	private int current;
+	
+	private volatile int sizeTcp = 0;
+	private BitSet historyTcp = new BitSet();
+	private int currentTcp;
 	
 	private long lap;
 	
@@ -56,8 +62,8 @@ public class HealthCheck implements Closeable {
 		super();
 		this.clusterHealthCheck = requireNonNull(clusterHealthCheck);
 		this.healthCheckService = requireNonNull(healthCheckService);
-		
-        this.state = new State();
+		this.inetAddr = new InetSocketAddress(clusterHealthCheck.getHost(), 443); 
+	    this.state = new State();
         this.cleanable = cleaner.register(this, state);
 	}
 	
@@ -71,14 +77,27 @@ public class HealthCheck implements Closeable {
 			size++;
 		}
 	}
+	
+	private synchronized void setTcpHealth(boolean success) {
+		if (currentTcp == HISTORY_SIZE) {
+			currentTcp = 0;
+		}
+		historyTcp.set(currentTcp++, !success);
+		
+		if (sizeTcp < HISTORY_SIZE) {
+			sizeTcp++;
+		}
+	}
 
 	public void start() {	
 		handle = executor.scheduleWithFixedDelay(this::runCheck, 0, CHECK_DELAY, TimeUnit.MILLISECONDS);
+		executor.scheduleWithFixedDelay(this::runTcpCheck, 0, CHECK_DELAY, TimeUnit.MILLISECONDS);
 	}
 	
 	public synchronized Health health() {
-		return new Health(clusterHealthCheck.getHost(), size, history.cardinality(), Duration.ofNanos(size * lap));
+		return new Health(clusterHealthCheck.getHost(), size, history.cardinality(), Duration.ofNanos(size * lap), sizeTcp, historyTcp.cardinality());
 	}
+
 
 	@Value
 	public static class Health extends RepresentationModel<Health>{
@@ -87,12 +106,17 @@ public class HealthCheck implements Closeable {
 		private int nbFailedRequests;
 		private Duration window;
 		
-		public Health(String cluster, int nbRequests, int nbFailedRequests, Duration window) {
+		private int nbTcpConnect;
+		private int nbTcpConnectFailed;
+		
+		public Health(String cluster, int nbRequests, int nbFailedRequests, Duration window, int nbTcpConnect, int nbTcpConnectFailed) {
 			super();
 			this.cluster = cluster;
 			this.nbRequests = nbRequests;
 			this.nbFailedRequests = nbFailedRequests;
 			this.window = window;
+			this.nbTcpConnect = nbTcpConnect;
+			this.nbTcpConnectFailed =nbTcpConnectFailed;
 		}
 
 		public String getCluster() {
@@ -112,16 +136,24 @@ public class HealthCheck implements Closeable {
 		}
 
 		public double getErrorRate() {
-			if (getNbRequests() == 0) {
+			if (getNbTcpConnect() == 0) {
 				return 0D;
 			}
 			
-			return getNbFailedRequests() / (double)getNbRequests();
+			return getNbTcpConnectFailed() / (double)getNbTcpConnect();
 		}
 		
 		@JsonIgnore
 		public Location location() {
 			return Location.fromHost(cluster);
+		}
+
+		public int getNbTcpConnectFailed() {
+			return nbTcpConnectFailed;
+		}
+
+		public int getNbTcpConnect() {
+			return nbTcpConnect;
 		}
 	}
 
@@ -132,6 +164,23 @@ public class HealthCheck implements Closeable {
 			setHealth(true);
 		} catch (HealthCheckException e) {
 			setHealth(false);
+		}
+
+		long duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
+		if (lap == 0) {
+			lap = duration;
+		} else {
+			lap = 2 * duration / size + (lap * (size - 1))/ size;
+		}
+	}
+	
+	private void runTcpCheck() {
+		long start = System.nanoTime();
+		try {
+			TcpConnectService.testConnect(inetAddr);
+			setTcpHealth(true);
+		} catch (HealthCheckException e) {
+			setTcpHealth(false);
 		}
 
 		long duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;

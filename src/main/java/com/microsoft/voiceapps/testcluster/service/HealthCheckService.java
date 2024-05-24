@@ -70,11 +70,11 @@ public class HealthCheckService {
 	
 	@Autowired
 	public HealthCheckService() {
-		this(Duration.ofSeconds(15), 300);
+		this(Duration.ofSeconds(2), 1000);
 	}
 	
 	public HealthCheckService(Duration timeout, int nbConnectionPool) {
-		System.setProperty("jdk.httpclient.keepalive.timeout", "1200");
+		System.setProperty("jdk.httpclient.keepalive.timeout", "20");
 		
 		this.timeout = requireNonNull(timeout);
 		try {
