@@ -13,6 +13,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -26,6 +28,7 @@ import lombok.Value;
 @AllArgsConstructor
 public class HealthCheck implements Closeable {
 	private static final int CHECK_DELAY = 100;
+	private static final Logger logger = LoggerFactory.getLogger(HealthCheck.class);
 
 	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(25);
 	private static final int HISTORY_SIZE = 1000;
@@ -44,6 +47,7 @@ public class HealthCheck implements Closeable {
 	private long lap;
 	
 	private ScheduledFuture<?> handle;
+	private ScheduledFuture<?> handleTcp;
 	
 	private static final Cleaner cleaner = Cleaner.create();
 
@@ -51,6 +55,7 @@ public class HealthCheck implements Closeable {
          public void run() {
         	 if (handle != null) {
         		 handle.cancel(false);
+        		 handleTcp.cancel(false);
         	 }
          }
     }
@@ -90,8 +95,8 @@ public class HealthCheck implements Closeable {
 	}
 
 	public void start() {	
-		handle = executor.scheduleWithFixedDelay(this::runCheck, 0, CHECK_DELAY, TimeUnit.MILLISECONDS);
-		executor.scheduleWithFixedDelay(this::runTcpCheck, 0, CHECK_DELAY, TimeUnit.MILLISECONDS);
+		handle = executor.scheduleWithFixedDelay(this::runCheck, 50, CHECK_DELAY, TimeUnit.MILLISECONDS);
+		handleTcp = executor.scheduleWithFixedDelay(this::runTcpCheck, 0, CHECK_DELAY, TimeUnit.MILLISECONDS);
 	}
 	
 	public synchronized Health health() {
@@ -158,19 +163,11 @@ public class HealthCheck implements Closeable {
 	}
 
 	private void runCheck() {
-		long start = System.nanoTime();
 		try {
 			healthCheckService.testHealth(clusterHealthCheck);
 			setHealth(true);
 		} catch (HealthCheckException e) {
 			setHealth(false);
-		}
-
-		long duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
-		if (lap == 0) {
-			lap = duration;
-		} else {
-			lap = 2 * duration / size + (lap * (size - 1))/ size;
 		}
 	}
 	
@@ -181,13 +178,15 @@ public class HealthCheck implements Closeable {
 			setTcpHealth(true);
 		} catch (HealthCheckException e) {
 			setTcpHealth(false);
+		} catch (Exception e) {
+			logger.warn("TCP check failed ", e);
 		}
 
 		long duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
 		if (lap == 0) {
 			lap = duration;
 		} else {
-			lap = 2 * duration / size + (lap * (size - 1))/ size;
+			lap = 2 * duration / sizeTcp + (lap * (sizeTcp - 1))/ sizeTcp;
 		}
 	}
 
