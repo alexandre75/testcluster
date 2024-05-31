@@ -29,6 +29,8 @@ import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckRepository;
 import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 
+import io.micrometer.core.annotation.Timed;
+
 @RestController
 @RequestMapping("healths")
 public class HealthResource {
@@ -42,6 +44,7 @@ public class HealthResource {
 		this.directory = directory;
 	}
 	
+	@Timed
 	@GetMapping("/{namespace}/{partition}/{datacenter}")
 	ResponseEntity<EntityModel<Health>> health(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
 		logger.info("GET /health/"+namespace+"/" + partition + "/" + datacenter);
@@ -58,6 +61,7 @@ public class HealthResource {
 	    }
 	}
 	
+	@Timed
 	@GetMapping("/{namespace}")
 	ResponseEntity<CollectionModel<Health>> healthNamespace(@PathVariable String namespace, 
 			@RequestParam("partition-contains") Optional<String> partitionFilter, 

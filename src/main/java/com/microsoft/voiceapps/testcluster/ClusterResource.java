@@ -32,6 +32,7 @@ import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 
 @RestController
@@ -40,6 +41,7 @@ public class ClusterResource {
 	private static final String CONFIG_FILE_NAME = "config.json";
 	private final HealthCheckService healthCheckService;
 	private final HealthCheckRepository directory;
+	private final MeterRegistry meterRegistry;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HealthResource.class);
 	private static final Set<String> registered = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -47,10 +49,11 @@ public class ClusterResource {
 	private static boolean initialized;
 	
 	@Autowired
-	public ClusterResource(HealthCheckService healthCheckService, HealthCheckRepository directory) {
+	public ClusterResource(HealthCheckService healthCheckService, HealthCheckRepository directory, MeterRegistry meterRegistry) {
 		super();
 		this.healthCheckService = healthCheckService;
 		this.directory = directory;
+		this.meterRegistry = meterRegistry;
 	}
 	
 	@PostConstruct
@@ -92,7 +95,7 @@ public class ClusterResource {
 	    
 	    for (URI uri : uris) {
 	    	Location location = Location.from(uri);
-	    	HealthCheck healthcCheck = new HealthCheck(uri, healthCheckService);
+	    	HealthCheck healthcCheck = new HealthCheck(uri, healthCheckService, 100_000, meterRegistry);
 	    	healthcCheck.start();
 	    	directory.add(location, healthcCheck);
 	    	

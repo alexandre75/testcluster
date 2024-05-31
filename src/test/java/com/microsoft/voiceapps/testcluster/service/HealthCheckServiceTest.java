@@ -15,7 +15,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 @WireMockTest(httpsEnabled = true)
 class HealthCheckServiceTest {
 
-	private HealthCheckService subject = new HealthCheckService(Duration.ofSeconds(1), 2);
+	private HealthCheckService subject = new HealthCheckService(Duration.ofSeconds(1));
 	
 	@Test
 	void testOK(WireMockRuntimeInfo wmRuntimeInfo) throws HealthCheckException {

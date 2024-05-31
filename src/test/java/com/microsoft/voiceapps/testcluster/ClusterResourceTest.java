@@ -18,6 +18,8 @@ import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
+import io.micrometer.core.instrument.Metrics;
+
 public class ClusterResourceTest {
 	ClusterResource subject;
 	
@@ -29,7 +31,7 @@ public class ClusterResourceTest {
 	void init() {
 		MockitoAnnotations.openMocks(this);
 		
-		subject = new ClusterResource(healthCheckService, directory);
+		subject = new ClusterResource(healthCheckService, directory, Metrics.globalRegistry);
 	}
 	
 	@Test
@@ -59,7 +61,7 @@ public class ClusterResourceTest {
 	void shouldDeleteHealthCheck() {
 		Partition partition = new Partition("namespace", "partition");
 	    Location location = new Location(partition, "region");
-		directory.add(location, new HealthCheck(URI.create("http://alex"), healthCheckService));
+		directory.add(location, new HealthCheck(URI.create("http://alex"), healthCheckService, 1000));
 	    
 	    var response = subject.delete("namespace", "partition", "region");
 	    

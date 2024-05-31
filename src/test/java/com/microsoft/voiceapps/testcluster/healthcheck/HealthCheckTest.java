@@ -27,7 +27,7 @@ class HealthCheckTest {
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		subject = new HealthCheck(uri, healthCheckService);
+		subject = new HealthCheck(uri, healthCheckService, 1000);
 	}
 	
 	@AfterEach

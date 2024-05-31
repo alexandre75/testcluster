@@ -22,6 +22,10 @@ import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 import com.microsoft.voiceapps.testcluster.service.TcpConnectService;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
@@ -31,9 +35,16 @@ public class HealthCheck implements Closeable {
 	private static final Logger logger = LoggerFactory.getLogger(HealthCheck.class);
 
 	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(25);
-	private static final int HISTORY_SIZE = 1000;
+	private final int historySize;
+	private static final int HISTORY_TCP_SIZE = 1000;
 	private URI clusterHealthCheck;
 	private final InetSocketAddress inetAddr;
+	
+	private final Timer tcpTimerSuccess;
+	private final Timer tcpTimerFail;
+	private final Counter errors;
+	private final Counter success;
+	
 	private HealthCheckService healthCheckService;
 	
 	private volatile int size = 0;
@@ -63,33 +74,61 @@ public class HealthCheck implements Closeable {
     private final State state;
     private final Cleaner.Cleanable cleanable;
 	
-	public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService) {
+    public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService, int historySize) {
+    	this(clusterHealthCheck, healthCheckService, historySize, Metrics.globalRegistry);
+    }
+    
+	public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService, int historySize, MeterRegistry meterRegistry) {
 		super();
 		this.clusterHealthCheck = requireNonNull(clusterHealthCheck);
 		this.healthCheckService = requireNonNull(healthCheckService);
 		this.inetAddr = new InetSocketAddress(clusterHealthCheck.getHost(), 443); 
 	    this.state = new State();
-        this.cleanable = cleaner.register(this, state);
+	    this.cleanable = cleaner.register(this, state);
+	    this.historySize = historySize;
+
+	    
+	    Location location;
+	    try {
+	    	location = Location.from(clusterHealthCheck);
+	    } catch(IllegalArgumentException ignored) {
+	    	location = new Location(new Partition("", ""), "");
+	    }
+	    
+	    tcpTimerSuccess = Timer.builder("healths")
+	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "success")
+	    		.register(meterRegistry);
+	    tcpTimerFail = Timer.builder("healths")
+	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "fail")
+	    		.register(meterRegistry);
+	    
+	    errors = Counter.builder("health.error")
+	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition())
+	    		.register(meterRegistry);
+	    
+	    success = Counter.builder("health.success")
+	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition())
+	    		.register(meterRegistry);
 	}
 	
 	synchronized void setHealth(boolean success) {
-		if (current == HISTORY_SIZE) {
+		if (current == historySize) {
 			current = 0;
 		}
 		history.set(current++, !success);
 		
-		if (size < HISTORY_SIZE) {
+		if (size < historySize) {
 			size++;
 		}
 	}
 	
 	private synchronized void setTcpHealth(boolean success) {
-		if (currentTcp == HISTORY_SIZE) {
+		if (currentTcp == HISTORY_TCP_SIZE) {
 			currentTcp = 0;
 		}
 		historyTcp.set(currentTcp++, !success);
 		
-		if (sizeTcp < HISTORY_SIZE) {
+		if (sizeTcp < HISTORY_TCP_SIZE) {
 			sizeTcp++;
 		}
 	}
@@ -100,7 +139,7 @@ public class HealthCheck implements Closeable {
 	}
 	
 	public synchronized Health health() {
-		return new Health(clusterHealthCheck.getHost(), size, history.cardinality(), Duration.ofNanos(size * lap), sizeTcp, historyTcp.cardinality());
+		return new Health(clusterHealthCheck.getHost(), size, history.cardinality(), Duration.ofNanos(sizeTcp * lap), sizeTcp, historyTcp.cardinality());
 	}
 
 
@@ -167,22 +206,33 @@ public class HealthCheck implements Closeable {
 			healthCheckService.testHealth(clusterHealthCheck);
 			setHealth(true);
 		} catch (HealthCheckException e) {
+			//logger.info("Health Check failed " + e.getRemoteMessage(), e);
 			setHealth(false);
 		}
 	}
 	
 	private void runTcpCheck() {
 		long start = System.nanoTime();
+		long duration;
 		try {
 			TcpConnectService.testConnect(inetAddr);
+		    duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
 			setTcpHealth(true);
+			
+			tcpTimerSuccess.record(duration, TimeUnit.NANOSECONDS);
+			success.increment();
 		} catch (HealthCheckException e) {
+			duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
 			setTcpHealth(false);
+			
+			tcpTimerFail.record(duration, TimeUnit.NANOSECONDS);
+			errors.increment();
 		} catch (Exception e) {
+			duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
 			logger.warn("TCP check failed ", e);
 		}
 
-		long duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
+		
 		if (lap == 0) {
 			lap = duration;
 		} else {

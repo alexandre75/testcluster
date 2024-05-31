@@ -38,7 +38,7 @@ class HealthResourceTest {
 	@Test
 	void shouldFilteNamespace() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("unkown", Optional.empty(), Optional.empty());
 	    
@@ -48,7 +48,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealth() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.empty());
 	    
@@ -59,7 +59,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealthFilterWork() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("rti"), Optional.empty());
 	    
@@ -70,7 +70,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealthFilterExclude() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), Optional.empty());
 	    
@@ -81,7 +81,7 @@ class HealthResourceTest {
 	@Test
 	void shouldFilterLowErrorRate() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.1F));
 	    
@@ -92,7 +92,7 @@ class HealthResourceTest {
 	@Test
 	void shouldShowHighErrorRate() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.0F));
 	    
@@ -103,7 +103,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReaturnHealth() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.health("namespace", "partition", "region");
 	    
@@ -114,7 +114,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturn404() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService));
+	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.health("namespace", "partition", "region2");
 	    

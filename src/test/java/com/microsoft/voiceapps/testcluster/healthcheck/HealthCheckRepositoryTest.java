@@ -15,7 +15,7 @@ import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 class HealthCheckRepositoryTest {
 	
 	HealthCheckRepository subject = new HealthCheckRepository();
-	HealthCheckService healthCheckService = new HealthCheckService(Duration.ofSeconds(1), 1);
+	HealthCheckService healthCheckService = new HealthCheckService(Duration.ofSeconds(1));
 
 	@Test
 	void test() {
@@ -25,16 +25,20 @@ class HealthCheckRepositoryTest {
 		Location japan = new Location(apacA, "japan");
 		Location malaysia = new Location(apacA, "malaysia");
 		Location malaysiaB = new Location(apacB, "malaysia");
-		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
-		HealthCheck hMalaysia = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
+		HealthCheck hJapan = createHealthCheck();
+		HealthCheck hMalaysia = createHealthCheck();
 		
 		subject.add(malaysia, hMalaysia);
 		subject.add(japan, hJapan);
-		subject.add(malaysiaB, new HealthCheck(URI.create("http://noam/me"), healthCheckService));
+		subject.add(malaysiaB, createHealthCheck());
 		
 		Collection<HealthCheck> healthChecks = subject.partition(apacA);
 		
 		assertEquals(2, healthChecks.size());
+	}
+
+	private HealthCheck createHealthCheck() {
+		return new HealthCheck(URI.create("http://noam/me"), healthCheckService, 1000);
 	}
 	
 	@Test
@@ -51,7 +55,7 @@ class HealthCheckRepositoryTest {
 	void shouldReturnEmptyWhenPartitionExist() {
 		Partition apacA = new Partition("namespace", "apac-a");		
 		Location japan = new Location(apacA, "japan");
-		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
+		HealthCheck hJapan = createHealthCheck();
 		subject.add(japan, hJapan);
 		
 		Optional<HealthCheck> result = subject.findOne(new Location(apacA, "malaysia"));
@@ -63,7 +67,7 @@ class HealthCheckRepositoryTest {
 	void shouldReturnHealth() {
 		Partition apacA = new Partition("namespace", "apac-a");		
 		Location japan = new Location(apacA, "japan");
-		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
+		HealthCheck hJapan = createHealthCheck();
 		subject.add(japan, hJapan);
 		
 		Optional<HealthCheck> result = subject.findOne(japan);
@@ -75,7 +79,7 @@ class HealthCheckRepositoryTest {
 	void shouldReturnEmptyFind() {
 		Partition apacA = new Partition("namespace", "apac-a");		
 		Location japan = new Location(apacA, "japan");
-		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
+		HealthCheck hJapan = createHealthCheck();
 		subject.add(japan, hJapan);
 		
 		List<HealthCheck> result = subject.find("namespace", "apac-b");
@@ -87,7 +91,7 @@ class HealthCheckRepositoryTest {
 	void shouldMatchPartition() {
 		Partition apacA = new Partition("namespace", "apac-a");		
 		Location japan = new Location(apacA, "japan");
-		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
+		HealthCheck hJapan = createHealthCheck();
 		subject.add(japan, hJapan);
 		
 		List<HealthCheck> result = subject.find("namespace", "apac");
@@ -106,7 +110,7 @@ class HealthCheckRepositoryTest {
 	void shouldMatchPartitionWhenNullPattern() {
 		Partition apacA = new Partition("namespace", "apac-a");		
 		Location japan = new Location(apacA, "japan");
-		HealthCheck hJapan = new HealthCheck(URI.create("http://noam/me"), healthCheckService);
+		HealthCheck hJapan = createHealthCheck();
 		subject.add(japan, hJapan);
 		
 		List<HealthCheck> result = subject.find("namespace", null);

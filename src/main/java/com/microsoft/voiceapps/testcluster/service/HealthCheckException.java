@@ -21,4 +21,8 @@ public class HealthCheckException extends Exception {
 		super(message);
 		this.remoteMessage = remoteMessage;
 	}
+
+	public String getRemoteMessage() {
+		return remoteMessage;
+	}
 }

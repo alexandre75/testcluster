@@ -13,10 +13,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.LocalDateTime;
 
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -28,7 +28,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Scope("singleton")
+@ThreadSafe
 public class HealthCheckService {
+	private static final int MAX_TRY = 6;
 	
 	X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
 	    @Override
@@ -61,57 +63,74 @@ public class HealthCheckService {
 	    }
 	};
 	
-	SSLContext sslContext;
-	
-	private final List<HttpClient> clients = new ArrayList<>();
+	private final SSLContext sslContext;
 	private final Duration timeout;
-	private AtomicInteger current = new AtomicInteger();
 	
+	@GuardedBy("httpClientLock") private LocalDateTime threshold;
+	@GuardedBy("httpClientLock") private HttpClient httpClient;
+	private Object httpClientLock = new Object();
 	
 	@Autowired
 	public HealthCheckService() {
-		this(Duration.ofSeconds(2), 1000);
+		this(Duration.ofSeconds(15));
 	}
 	
-	public HealthCheckService(Duration timeout, int nbConnectionPool) {
+	public HealthCheckService(Duration timeout) {
 		System.setProperty("jdk.httpclient.keepalive.timeout", "20");
 		
-		this.timeout = requireNonNull(timeout);
 		try {
 			sslContext = SSLContext.getInstance("TLS");
 			sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
-			
-			for (int i = 0 ; i < nbConnectionPool ; i++) {
-			 HttpClient httpClient = HttpClient.newBuilder()
-					        .connectTimeout(timeout)
-					        .sslContext(sslContext) // SSL context 'sc' initialised as earlier
-					     //   .sslParameters(parameters) // ssl parameters if overriden
-					        .build();
-			clients.add(httpClient);
-			}
 		} catch (KeyManagementException | NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
+		
+		this.timeout = requireNonNull(timeout);
+		
+		httpClient = createHttpClient();
+		threshold = LocalDateTime.now().plusMinutes(2);
+	}
+
+	private HttpClient createHttpClient() {	
+			 return HttpClient.newBuilder()
+					        .connectTimeout(Duration.ofSeconds(1))
+					        .sslContext(sslContext) // SSL context 'sc' initialised as earlier
+					     //   .sslParameters(parameters) // ssl parameters if overriden
+					        .build();
 	}
 	
 	public void testHealth(URI uri) throws HealthCheckException {
 		requireNonNull(uri);
 		
-		HttpResponse<String> response;
-		try {
-			response = clients.get(current.accumulateAndGet(1, this::rotate))
-					          .send(HttpRequest.newBuilder(uri).timeout(timeout).build(), HttpResponse.BodyHandlers.ofString());
-			if (response.statusCode() != 200) {
-				throw new HealthCheckException("uri" + uri.toString(), "" + response.statusCode());
+		long endMax = System.nanoTime() + 10L * 1_000_000_000L;
+		int trial = 0;
+		while (true) {
+			trial++;
+			HttpResponse<String> response;
+			try {
+				response = getHttpClient()
+						.send(HttpRequest.newBuilder(uri).timeout(timeout).build(), HttpResponse.BodyHandlers.ofString());
+				if (response.statusCode() != 200) {
+					throw new HealthCheckException("uri" + uri.toString(), "" + response.statusCode());
+				}
+				return;
+			} catch (IOException e) {
+				if (trial >= MAX_TRY || System.nanoTime() > endMax) {
+					throw new HealthCheckException("uri :" + uri.toString(), e.getMessage(), e);
+				}
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
 			}
-		} catch (IOException e) {
-			throw new HealthCheckException("uri :" + uri.toString(), e.getMessage(), e);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
 		}
 	}
-	
-	private int rotate(int a, int b) {
-		return (a + b) % clients.size();
+
+	private HttpClient getHttpClient() {
+		synchronized(httpClientLock) {
+			if (LocalDateTime.now().isAfter(threshold)) {
+				httpClient = createHttpClient();
+				threshold = LocalDateTime.now().plusMinutes(2);
+			}
+			return httpClient;
+		}
 	}
 }
