@@ -251,4 +251,8 @@ public class HealthCheck implements Closeable {
 	public void close() {
 		cleanable.clean();
 	}
+
+	public boolean isActive() {
+		return handleTcp != null && !handleTcp.isCancelled();
+	}
 }

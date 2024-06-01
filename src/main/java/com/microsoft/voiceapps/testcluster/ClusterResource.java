@@ -77,11 +77,13 @@ public class ClusterResource {
 	ResponseEntity<?> delete(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter, @PathVariable String service) {
 		logger.info("DELETE /health/"+namespace+"/" + partition);
 	    Optional<HealthCheck> res =  directory.remove(new Location(new Partition(namespace, partition), datacenter, service));
-	    //res.ifPresent(HealthCheck::close);
-	    save();
+	    res.ifPresent(HealthCheck::close);
+
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 	    } else {
+	    	registered.remove(res.get().health().getCluster());
+		    save();
 	    	return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null); 
 	    }
 	}

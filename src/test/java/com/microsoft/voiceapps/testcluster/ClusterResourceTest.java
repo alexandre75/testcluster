@@ -1,6 +1,7 @@
 package com.microsoft.voiceapps.testcluster;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
@@ -66,6 +67,19 @@ public class ClusterResourceTest {
 	    var response = subject.delete("namespace", "partition", "region", "envoy");
 	    
 	    assertTrue(directory.findOne(location).isEmpty());
+	    assertEquals(HttpStatusCode.valueOf(204), response.getStatusCode());
+	}
+	
+	@Test
+	void shouldDeactivateHealthCheck() {
+		Partition partition = new Partition("namespace", "partition");
+	    Location location = new Location(partition, "region", "envoy");
+		HealthCheck health = new HealthCheck(URI.create("http://alex"), healthCheckService, 1000);
+		directory.add(location, health);
+	    
+	    var response = subject.delete("namespace", "partition", "region", "envoy");
+	    
+	    assertFalse(health.isActive());
 	    assertEquals(HttpStatusCode.valueOf(204), response.getStatusCode());
 	}
 	
