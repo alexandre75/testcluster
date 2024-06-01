@@ -45,11 +45,11 @@ public class HealthResource {
 	}
 	
 	@Timed
-	@GetMapping("/{namespace}/{partition}/{datacenter}")
-	ResponseEntity<EntityModel<Health>> health(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
+	@GetMapping("/{namespace}/{partition}/{datacenter}/{service}")
+	ResponseEntity<EntityModel<Health>> health(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter, @PathVariable String service) {
 		logger.info("GET /health/"+namespace+"/" + partition + "/" + datacenter);
 		datacenter = datacenter.split("-")[0];
-	    Optional<HealthCheck> res =  directory.findOne(new Location(new Partition(namespace, partition), datacenter));
+	    Optional<HealthCheck> res =  directory.findOne(new Location(new Partition(namespace, partition), datacenter, service));
 
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 

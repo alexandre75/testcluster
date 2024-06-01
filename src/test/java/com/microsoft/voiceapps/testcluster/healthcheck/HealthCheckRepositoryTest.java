@@ -117,4 +117,19 @@ class HealthCheckRepositoryTest {
 		
 		assertFalse(result.isEmpty());
 	}
+	
+	@Test
+	void shouldHandleService() {
+		Partition apacA = new Partition("namespace", "apac-a");
+		
+		Location service1 = new Location(apacA, "malaysia", "service1");
+		Location service2 = new Location(apacA, "malaysia", "service2");
+		
+		subject.add(service1, createHealthCheck());
+		subject.add(service2, createHealthCheck());
+		
+		Collection<HealthCheck> healthChecks = subject.find("namespace", "apac");
+		
+		assertEquals(2, healthChecks.size());
+	}
 }

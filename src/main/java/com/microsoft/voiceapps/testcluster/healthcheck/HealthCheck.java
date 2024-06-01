@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.BitSet;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -25,6 +26,7 @@ import com.microsoft.voiceapps.testcluster.service.TcpConnectService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -92,7 +94,7 @@ public class HealthCheck implements Closeable {
 	    try {
 	    	location = Location.from(clusterHealthCheck);
 	    } catch(IllegalArgumentException ignored) {
-	    	location = new Location(new Partition("", ""), "");
+	    	location = new Location(new Partition("", ""), "", "");
 	    }
 	    
 	    tcpTimerSuccess = Timer.builder("healths")
@@ -102,12 +104,17 @@ public class HealthCheck implements Closeable {
 	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "fail")
 	    		.register(meterRegistry);
 	    
+	    List<Tag> tags = List.of(
+	    		Tag.of("datacenter", location.getDatacenter()),
+	    		Tag.of("namespace", location.getPartition().getNamespace()),
+	    		Tag.of("partition", location.getPartition().getPartition()),
+	    		Tag.of("service", location.getService()));
 	    errors = Counter.builder("health.error")
-	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition())
+	    		.tags(tags)
 	    		.register(meterRegistry);
 	    
 	    success = Counter.builder("health.success")
-	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition())
+	    		.tags(tags)
 	    		.register(meterRegistry);
 	}
 	

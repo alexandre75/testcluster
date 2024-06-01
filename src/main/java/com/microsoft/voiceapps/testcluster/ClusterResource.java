@@ -73,10 +73,12 @@ public class ClusterResource {
 		}
 	}
 	
-	@DeleteMapping("/{namespace}/{partition}/{datacenter}")
-	ResponseEntity<?> delete(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter) {
+	@DeleteMapping("/{namespace}/{partition}/{datacenter}/{service}")
+	ResponseEntity<?> delete(@PathVariable String namespace, @PathVariable String partition, @PathVariable String datacenter, @PathVariable String service) {
 		logger.info("DELETE /health/"+namespace+"/" + partition);
-	    Optional<HealthCheck> res =  directory.remove(new Location(new Partition(namespace, partition), datacenter));
+	    Optional<HealthCheck> res =  directory.remove(new Location(new Partition(namespace, partition), datacenter, service));
+	    //res.ifPresent(HealthCheck::close);
+	    save();
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 	    } else {
@@ -100,9 +102,9 @@ public class ClusterResource {
 	    	directory.add(location, healthcCheck);
 	    	
 	    	registered.addAll(request.getUris());
-	    	
-	    	save();
 	    }  
+	    
+    	save();
 	    
 	    return ResponseEntity.status(HttpStatus.CREATED).body(null); 
 	}

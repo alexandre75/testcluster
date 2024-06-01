@@ -24,7 +24,11 @@ public class HealthCheckRepository {
 	public void add(Location location, HealthCheck health) {
 		locations.computeIfAbsent(location.getPartition().getNamespace(), k -> new ConcurrentHashMap<>())
 		         .computeIfAbsent(location.getPartition(), k -> new ConcurrentHashMap<>())
-		         .put(location.getDatacenter(), health);
+		         .put(key(location), health);
+	}
+
+	private String key(Location location) {
+		return location.getDatacenter() + "#" + location.getService();
 	}
 	
 	public Optional<HealthCheck> findOne(Location location) {
@@ -40,7 +44,7 @@ public class HealthCheckRepository {
 			return Optional.empty();
 		}
 		
-		return Optional.ofNullable(inPart.get(location.getDatacenter()));
+		return Optional.ofNullable(inPart.get(key(location)));
 	}
 	
 	public Collection<HealthCheck> partition(Partition partition) {
@@ -87,7 +91,7 @@ public class HealthCheckRepository {
 			return Optional.empty();
 		}
 		
-		return Optional.ofNullable(inPart.remove(location.getDatacenter()));
+		return Optional.ofNullable(inPart.remove(key(location)));
 	}
 
 	public boolean exists(String namespace) {

@@ -38,17 +38,21 @@ class HealthResourceTest {
 	@Test
 	void shouldFilteNamespace() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("unkown", Optional.empty(), Optional.empty());
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
+
+	private Location createLocation(Partition partition) {
+		return new Location(partition, "region", "service");
+	}
 	
 	@Test
 	void shouldReturnNamespaceHealth() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.empty());
 	    
@@ -59,7 +63,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealthFilterWork() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("rti"), Optional.empty());
 	    
@@ -70,7 +74,7 @@ class HealthResourceTest {
 	@Test
 	void shouldReturnNamespaceHealthFilterExclude() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.of("unknown"), Optional.empty());
 	    
@@ -81,7 +85,7 @@ class HealthResourceTest {
 	@Test
 	void shouldFilterLowErrorRate() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.1F));
 	    
@@ -92,7 +96,7 @@ class HealthResourceTest {
 	@Test
 	void shouldShowHighErrorRate() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
 	    var response = subject.healthNamespace("namespace", Optional.empty(), Optional.of(0.0F));
 	    
@@ -103,9 +107,9 @@ class HealthResourceTest {
 	@Test
 	void shouldReaturnHealth() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
-	    var response = subject.health("namespace", "partition", "region");
+	    var response = subject.health("namespace", "partition", "region", "service");
 	    
 	    assertEquals(HttpStatusCode.valueOf(200), response.getStatusCode());
 	    assertNotNull(response.getBody());
@@ -114,9 +118,9 @@ class HealthResourceTest {
 	@Test
 	void shouldReturn404() {
 		Partition partition = new Partition("namespace", "partition");
-	    directory.add(new Location(partition, "region"), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
+	    directory.add(createLocation(partition), new HealthCheck(CLUSTER_HEALTH_CHECK, healthCheckService, 1000));
 	    
-	    var response = subject.health("namespace", "partition", "region2");
+	    var response = subject.health("namespace", "partition", "region2", "service");
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}

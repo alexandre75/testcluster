@@ -125,12 +125,12 @@ public class HealthCheckService {
 	}
 
 	private HttpClient getHttpClient() {
-		synchronized(httpClientLock) {
-			if (LocalDateTime.now().isAfter(threshold)) {
-				httpClient = createHttpClient();
-				threshold = LocalDateTime.now().plusMinutes(2);
-			}
+//		synchronized(httpClientLock) {
+//			if (LocalDateTime.now().isAfter(threshold)) {
+//				httpClient = createHttpClient();
+//				threshold = LocalDateTime.now().plusMinutes(2);
+//			}
 			return httpClient;
-		}
+//		}
 	}
 }

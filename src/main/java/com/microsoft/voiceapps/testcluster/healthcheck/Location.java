@@ -6,13 +6,18 @@ import java.net.URI;
 import java.util.Objects;
 
 public class Location  {
-	private String datacenter;
-	private Partition partition;
+	private final String datacenter;
+	private final Partition partition;
+	private final String service;
 	
-	public Location(Partition partition, String datacenter) {
-		super();
-		this.datacenter = requireNonNull(datacenter);
+	Location(Partition partition, String datacenter) {
+		this(partition, datacenter, "default");
+	}
+	
+	public Location(Partition partition, String datacenter, String service) {
+		this.service = requireNonNull(service);
 		this.partition = requireNonNull(partition);
+		this.datacenter = requireNonNull(datacenter);
 	}
 
 	public String getDatacenter() {
@@ -22,10 +27,14 @@ public class Location  {
 	public Partition getPartition() {
 		return partition;
 	}
+	
+	public String getService() {
+		return service;
+	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(datacenter, partition);
+		return Objects.hash(datacenter, partition, service);
 	}
 	
 	@Override
@@ -37,7 +46,7 @@ public class Location  {
 		if (getClass() != obj.getClass())
 			return false;
 		Location other = (Location) obj;
-		return Objects.equals(datacenter, other.datacenter) && Objects.equals(partition, other.partition);
+		return Objects.equals(datacenter, other.datacenter) && Objects.equals(partition, other.partition) && Objects.equals(service,  other.service);
 	}
 	
 	@Override
@@ -56,8 +65,9 @@ public class Location  {
 			String namespace = parts[2];
 			String partition = parts[1];
 			String datacenter = parts[3];
+			String service = parts[0];
 
-			return new Location(new Partition(namespace, partition), datacenter.split("-")[0]);
+			return new Location(new Partition(namespace, partition), datacenter.split("-")[0], service);
 		} catch(Exception e) {
 			throw new IllegalArgumentException(hostname, e);
 		}

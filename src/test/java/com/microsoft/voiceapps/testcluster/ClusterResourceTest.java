@@ -42,7 +42,7 @@ public class ClusterResourceTest {
 	
 		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
 		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
-		assertTrue(directory.findOne(new Location(new Partition("ic3-sbvmessaging-vms", "df-a"), "eastus")).isPresent());
+		assertTrue(directory.findOne(new Location(new Partition("ic3-sbvmessaging-vms", "df-a"), "eastus", "envoy")).isPresent());
 	}
 	
 	@Test
@@ -60,10 +60,10 @@ public class ClusterResourceTest {
 	@Test
 	void shouldDeleteHealthCheck() {
 		Partition partition = new Partition("namespace", "partition");
-	    Location location = new Location(partition, "region");
+	    Location location = new Location(partition, "region", "envoy");
 		directory.add(location, new HealthCheck(URI.create("http://alex"), healthCheckService, 1000));
 	    
-	    var response = subject.delete("namespace", "partition", "region");
+	    var response = subject.delete("namespace", "partition", "region", "envoy");
 	    
 	    assertTrue(directory.findOne(location).isEmpty());
 	    assertEquals(HttpStatusCode.valueOf(204), response.getStatusCode());
@@ -71,7 +71,7 @@ public class ClusterResourceTest {
 	
 	@Test
 	void deleteShouldReturn404() {	    
-	    var response = subject.delete("namespace", "partition", "region1");
+	    var response = subject.delete("namespace", "partition", "region1", "envoy");
 	    
 	    assertEquals(HttpStatusCode.valueOf(404), response.getStatusCode());
 	}
