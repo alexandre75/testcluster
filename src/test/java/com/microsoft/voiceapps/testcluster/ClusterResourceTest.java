@@ -42,7 +42,7 @@ public class ClusterResourceTest {
 		
 		subject.register(request);
 	
-		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
+		HealthCheck health = directory.findOne(Location.from(URI.create(uri))).get();
 		assertEquals(uri, health.health().getCluster());
 		assertTrue(directory.findOne(new Location(new Partition("ic3-sbvmessaging-vms", "df-a"), "eastus", "envoy")).isPresent());
 	}
@@ -56,7 +56,7 @@ public class ClusterResourceTest {
 		directory.clear();
 		subject.init();
 		
-		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
+		HealthCheck health = directory.findOne(Location.from(URI.create(uri))).get();
 		assertEquals(uri, health.health().getCluster());
 	}
 	

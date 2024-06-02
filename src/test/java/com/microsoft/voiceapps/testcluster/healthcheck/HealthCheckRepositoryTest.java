@@ -17,26 +17,6 @@ class HealthCheckRepositoryTest {
 	HealthCheckRepository subject = new HealthCheckRepository();
 	HealthCheckService healthCheckService = new HealthCheckService(Duration.ofSeconds(1));
 
-	@Test
-	void test() {
-		Partition apacA = new Partition("namespace", "apac-a");
-		Partition apacB = new Partition("namespace", "apac-b");
-		
-		Location japan = new Location(apacA, "japan");
-		Location malaysia = new Location(apacA, "malaysia");
-		Location malaysiaB = new Location(apacB, "malaysia");
-		HealthCheck hJapan = createHealthCheck();
-		HealthCheck hMalaysia = createHealthCheck();
-		
-		subject.add(malaysia, hMalaysia);
-		subject.add(japan, hJapan);
-		subject.add(malaysiaB, createHealthCheck());
-		
-		Collection<HealthCheck> healthChecks = subject.partition(apacA);
-		
-		assertEquals(2, healthChecks.size());
-	}
-
 	private HealthCheck createHealthCheck() {
 		return new HealthCheck(URI.create("http://noam/me"), healthCheckService, 1000);
 	}

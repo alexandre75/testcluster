@@ -47,11 +47,6 @@ public class HealthCheckRepository {
 		return Optional.ofNullable(inPart.get(key(location)));
 	}
 	
-	public Collection<HealthCheck> partition(Partition partition) {
-		return Collections.unmodifiableCollection(locations.getOrDefault(partition.getNamespace(), Map.of())
-				                                           .getOrDefault(partition, Map.of()).values());
-	}
-	
 	/**
 	 * Return HealthChecks matching the parameters.
 	 * @param namespace
