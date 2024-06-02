@@ -172,10 +172,12 @@ public class HealthCheck implements Closeable {
 			return cluster;
 		}
 
+		@JsonIgnore
 		public int getNbRequests() {
 			return nbRequests;
 		}
 
+		@JsonIgnore
 		public int getNbFailedRequests() {
 			return nbFailedRequests;
 		}
