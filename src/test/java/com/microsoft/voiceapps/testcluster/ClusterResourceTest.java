@@ -15,9 +15,9 @@ import org.springframework.http.HttpStatusCode;
 
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckRepository;
+import com.microsoft.voiceapps.testcluster.healthcheck.HttpHealth;
 import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
-import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
 import io.micrometer.core.instrument.Metrics;
 
@@ -25,7 +25,7 @@ public class ClusterResourceTest {
 	ClusterResource subject;
 	
 	@Mock
-	HealthCheckService healthCheckService;
+	HttpHealth healthCheckService;
 	HealthCheckRepository directory = new HealthCheckRepository();
 	
 	@BeforeEach
