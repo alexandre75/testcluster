@@ -37,25 +37,27 @@ public class ClusterResourceTest {
 	
 	@Test
 	void shouldRegister() {
-		Request request = new Request(List.of("https://envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net/api/voicemail/probe"));
+		String uri = "https://envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net/api/voicemail/probe";
+		Request request = new Request(List.of(uri));
 		
 		subject.register(request);
 	
 		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
-		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
+		assertEquals(uri, health.health().getCluster());
 		assertTrue(directory.findOne(new Location(new Partition("ic3-sbvmessaging-vms", "df-a"), "eastus", "envoy")).isPresent());
 	}
 	
 	@Test
 	void shouldPersistConfig() {
-		Request request = new Request(List.of("https://envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net/api/voicemail/probe"));
+		String uri = "https://envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net/api/voicemail/probe";
+		Request request = new Request(List.of(uri));
 		subject.register(request);
 	
 		directory.clear();
 		subject.init();
 		
 		HealthCheck health = directory.partition(new Partition("ic3-sbvmessaging-vms", "df-a")).iterator().next();
-		assertEquals("envoy.df-a.ic3-sbvmessaging-vms.eastus-msit.cosmic.office.net", health.health().getCluster());
+		assertEquals(uri, health.health().getCluster());
 	}
 	
 	@Test

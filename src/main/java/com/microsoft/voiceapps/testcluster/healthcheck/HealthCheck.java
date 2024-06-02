@@ -144,7 +144,7 @@ public class HealthCheck implements Closeable {
 	}
 	
 	public synchronized Health health() {
-		return new Health(clusterHealthCheck.getHost(), size, history.cardinality(), Duration.ofNanos(sizeTcp * lap), sizeTcp, historyTcp.cardinality());
+		return new Health(clusterHealthCheck.toString(), size, history.cardinality(), Duration.ofNanos(sizeTcp * lap), sizeTcp, historyTcp.cardinality());
 	}
 
 
