@@ -26,10 +26,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckException;
+import com.microsoft.voiceapps.testcluster.healthcheck.HttpHealth;
+
 @Service
 @Scope("singleton")
 @ThreadSafe
-public class HealthCheckService {
+public class HealthCheckService implements HttpHealth {
 	private static final int MAX_TRY = 6;
 	
 	X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
@@ -99,6 +102,7 @@ public class HealthCheckService {
 					        .build();
 	}
 	
+	@Override
 	public void testHealth(URI uri) throws HealthCheckException {
 		requireNonNull(uri);
 		

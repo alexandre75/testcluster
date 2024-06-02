@@ -19,8 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
-import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 import com.microsoft.voiceapps.testcluster.service.TcpConnectService;
 
 import io.micrometer.core.instrument.Counter;
@@ -47,7 +45,7 @@ public class HealthCheck implements Closeable {
 	private final Counter errors;
 	private final Counter success;
 	
-	private HealthCheckService healthCheckService;
+	private HttpHealth healthCheckService;
 	
 	private volatile int size = 0;
 	private BitSet history = new BitSet();
@@ -76,11 +74,11 @@ public class HealthCheck implements Closeable {
     private final State state;
     private final Cleaner.Cleanable cleanable;
 	
-    public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService, int historySize) {
+    public HealthCheck(URI clusterHealthCheck, HttpHealth healthCheckService, int historySize) {
     	this(clusterHealthCheck, healthCheckService, historySize, Metrics.globalRegistry);
     }
     
-	public HealthCheck(URI clusterHealthCheck, HealthCheckService healthCheckService, int historySize, MeterRegistry meterRegistry) {
+	public HealthCheck(URI clusterHealthCheck, HttpHealth healthCheckService, int historySize, MeterRegistry meterRegistry) {
 		super();
 		this.clusterHealthCheck = requireNonNull(clusterHealthCheck);
 		this.healthCheckService = requireNonNull(healthCheckService);

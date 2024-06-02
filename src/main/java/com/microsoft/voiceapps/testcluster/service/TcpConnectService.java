@@ -3,6 +3,8 @@ package com.microsoft.voiceapps.testcluster.service;
 import java.io.IOException;
 import java.net.*;
 
+import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckException;
+
 public class TcpConnectService {
 	private TcpConnectService() {	
 	}

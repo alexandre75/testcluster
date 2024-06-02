@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck;
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheckRepository;
+import com.microsoft.voiceapps.testcluster.healthcheck.HttpHealth;
 import com.microsoft.voiceapps.testcluster.healthcheck.Location;
 import com.microsoft.voiceapps.testcluster.healthcheck.Partition;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
@@ -39,7 +40,7 @@ import jakarta.annotation.PostConstruct;
 @RequestMapping(value="/cluster")
 public class ClusterResource {
 	private static final String CONFIG_FILE_NAME = "config.json";
-	private final HealthCheckService healthCheckService;
+	private final HttpHealth healthCheckService;
 	private final HealthCheckRepository directory;
 	private final MeterRegistry meterRegistry;
 	

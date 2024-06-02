@@ -14,7 +14,6 @@ import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
 import com.microsoft.voiceapps.testcluster.healthcheck.HealthCheck.Health;
-import com.microsoft.voiceapps.testcluster.service.HealthCheckException;
 import com.microsoft.voiceapps.testcluster.service.HealthCheckService;
 
 class HealthCheckTest {

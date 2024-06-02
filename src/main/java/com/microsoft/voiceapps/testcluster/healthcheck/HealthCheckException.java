@@ -1,4 +1,4 @@
-package com.microsoft.voiceapps.testcluster.service;
+package com.microsoft.voiceapps.testcluster.healthcheck;
 
 import lombok.Getter;
 
