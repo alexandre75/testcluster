@@ -52,6 +52,11 @@ class HealthCheckTest {
 		Assertions.assertTrue(subject.health().getNbFailedRequests() == 0);
 	}
 	
+	@Test
+	void clusterShouldBeUri() throws HealthCheckException, InterruptedException {
+		Assertions.assertEquals(uri.toString(), subject.health().getCluster());
+	}
+	
 
 	@Test
 	void shouldUpdateHealthCheckWhenFail() throws InterruptedException, HealthCheckException {

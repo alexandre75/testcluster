@@ -112,4 +112,20 @@ class HealthCheckRepositoryTest {
 		
 		assertEquals(2, healthChecks.size());
 	}
+	
+	@Test
+	void shouldReturnAll() {
+		Partition apacA = new Partition("namespace", "apac-a");
+		Partition name2 = new Partition("namespace2", "apac-a");
+		
+		Location service1 = new Location(apacA, "malaysia", "service1");
+		Location service2 = new Location(name2, "malaysia", "service2");
+		
+		subject.add(service1, createHealthCheck());
+		subject.add(service2, createHealthCheck());
+		
+		Collection<HealthCheck> healthChecks = subject.all();
+		
+		assertEquals(2, healthChecks.size());
+	}
 }

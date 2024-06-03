@@ -5,12 +5,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +44,6 @@ public class ClusterResource {
 	private final MeterRegistry meterRegistry;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HealthResource.class);
-	private static final Set<String> registered = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private static final Object lock = new Object();
 	private static boolean initialized;
 	
@@ -83,7 +81,6 @@ public class ClusterResource {
 	    if (res.isEmpty()) {
 	    	return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
 	    } else {
-	    	registered.remove(res.get().health().getCluster());
 		    save();
 	    	return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null); 
 	    }
@@ -103,8 +100,6 @@ public class ClusterResource {
 	    	HealthCheck healthcCheck = new HealthCheck(uri, healthCheckService, 100_000, meterRegistry);
 	    	healthcCheck.start();
 	    	directory.add(location, healthcCheck);
-	    	
-	    	registered.addAll(request.getUris());
 	    }  
 	    
     	save();
@@ -113,6 +108,12 @@ public class ClusterResource {
 	}
 	
 	private void save() {
+		List<HealthCheck> all = directory.all();
+		Set<String> registered = new HashSet<>(); // in case there's duplicate, we'll start up clean
+		for (HealthCheck hk : all) {
+			registered.add(hk.health().getCluster());
+		}
+		
 		Request req = new Request();
 		req.setUris(new ArrayList<>(registered));
 		

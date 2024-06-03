@@ -1,7 +1,6 @@
 package com.microsoft.voiceapps.testcluster.healthcheck;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -91,5 +90,13 @@ public class HealthCheckRepository {
 
 	public boolean exists(String namespace) {
 		return locations.containsKey(namespace);
+	}
+
+	public List<HealthCheck> all() {
+		return locations.values()
+				        .stream()
+				        .flatMap(map -> map.values().stream())
+				        .flatMap(map -> map.values().stream())
+				        .toList();
 	}
 }
