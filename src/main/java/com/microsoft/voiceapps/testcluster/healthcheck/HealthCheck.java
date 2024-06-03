@@ -96,10 +96,10 @@ public class HealthCheck implements Closeable {
 	    }
 	    
 	    tcpTimerSuccess = Timer.builder("healths")
-	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "success")
+	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "success", "service", location.getService())
 	    		.register(meterRegistry);
 	    tcpTimerFail = Timer.builder("healths")
-	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "fail")
+	    		.tags("datacenter", location.getDatacenter(), "namespace", location.getPartition().getNamespace(), "partition", location.getPartition().getPartition(), "outcome", "fail", "service", location.getService())
 	    		.register(meterRegistry);
 	    
 	    List<Tag> tags = List.of(
