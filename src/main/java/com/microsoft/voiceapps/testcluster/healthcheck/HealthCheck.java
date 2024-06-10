@@ -237,6 +237,9 @@ public class HealthCheck implements Closeable {
 		} catch (Exception e) {
 			duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
 			logger.warn("TCP check failed ", e);
+		} catch (Throwable e) {
+			duration = System.nanoTime() - start + CHECK_DELAY * 1_000_000;
+			logger.error("TCP check failed ", e);
 		}
 
 		
